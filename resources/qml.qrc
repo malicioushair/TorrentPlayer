@@ -1,0 +1,7 @@
+<!-- qml/qml.qrc -->
+<RCC>
+    <qresource prefix="/">
+        <file alias="main.qml">../src/qml/main.qml</file>
+        <!-- Add other QML files here -->
+    </qresource>
+</RCC>
