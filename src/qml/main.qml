@@ -1,14 +1,31 @@
-import QtQuick 2.15
-import QtQuick.Window 2.15
+import QtQuick
+import QtQuick.Window
+import QtQuick.Layouts
+import QtQuick.Controls.Material
+import QtQuick.Dialogs
 
-Window {
+import "Player"
+
+ApplicationWindow {
+    id: mainWindowID
+
     visible: true
-    width: 640
-    height: 480
-    title: qsTr("Hello World")
 
-    Text {
-        text: qsTr("Hello World")
-        anchors.centerIn: parent
+    Material.theme: Material.Dark
+    Material.accent: Material.Purple
+
+    minimumWidth: 640
+    minimumHeight: 530
+    title: "Torrent Video Player"
+
+    ColumnLayout {
+        anchors.fill: parent
+
+        Player {
+            id: playerID
+
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+        }
     }
 }

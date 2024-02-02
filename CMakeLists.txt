@@ -13,7 +13,7 @@ execute_process(
 
 include(src/TorrentDownloader/TorrentDownloader.cmake)
 
-find_package(Qt6 COMPONENTS Core Gui Quick  REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Quick QuickLayouts REQUIRED)
 qt_standard_project_setup()
 
 qt_add_resources(QT_RESOURCES resources/qml.qrc)
@@ -25,10 +25,11 @@ target_link_libraries(${PROJECT_NAME}
     Qt6::Core
     Qt6::Gui
     Qt6::Quick
+    Qt6::QuickLayouts
     TorrentDownloader
 )
 
-# add_custom_command(TARGET ${PROJECT_NAME}  POST_BUILD
-#     COMMAND "${WINDEPLOYQT_EXECUTABLE}" --qmldir ${CMAKE_SOURCE_DIR} "$<TARGET_FILE:${PROJECT_NAME}>"
-#     COMMENT "Running windeployqt..."
-# )
+add_custom_command(TARGET ${PROJECT_NAME}  POST_BUILD
+    COMMAND "${WINDEPLOYQT_EXECUTABLE}" --qmldir ${CMAKE_SOURCE_DIR} "$<TARGET_FILE:${PROJECT_NAME}>"
+    COMMENT "Running windeployqt..."
+)

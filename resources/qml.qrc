@@ -2,6 +2,8 @@
 <RCC>
     <qresource prefix="/">
         <file alias="main.qml">../src/qml/main.qml</file>
-        <!-- Add other QML files here -->
+    </qresource>
+    <qresource prefix="/Player">
+        <file alias="Player.qml">../src/qml/Player/Player.qml</file>
     </qresource>
 </RCC>
