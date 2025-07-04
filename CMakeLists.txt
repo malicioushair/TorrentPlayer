@@ -18,7 +18,9 @@ qt_standard_project_setup()
 
 qt_add_resources(QT_RESOURCES resources/qml.qrc)
 
-set(SOURCES src/main.cpp)
+set(SOURCES src/main.cpp
+            src/GuiController/GuiController.cpp
+            src/GuiController/GuiController.h)
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${QT_RESOURCES})
 target_link_libraries(${PROJECT_NAME} 

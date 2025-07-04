@@ -17,10 +17,21 @@ Video {
             mainWindowID.visibility = Window.Windowed
     }
 
+    Connections {
+        target: guiController
+        function onReadyToPlayVideo() {
+            videoID.source = guiController.videoFile
+            if (videoID.playbackState !== MediaPlayer.PlayingState)
+                videoID.play()
+        }
+    }
+
     FileDialog {
         id: fileDialogID
         onAccepted: {
-            videoID.source = selectedFile
+            guiController.DownloadWithTorrentFile(selectedFile)
+
+            videoID.source = guiController.videoFile //selectedFile
             videoID.play()
             videoID.pause()
         }
@@ -72,6 +83,14 @@ Video {
                 to: videoID.duration
 
                 onMoved: videoID.seek(seekBarID.value)
+            }
+
+            Slider {
+                id: downloadProgressID
+
+                from: 0
+                value: guiController.downloadProgress
+                to: 100
             }
 
             RowLayout {

@@ -7,13 +7,18 @@
 #include <libtorrent/session.hpp>
 #include <libtorrent/torrent_status.hpp>
 
+#include "TorrentDownloader/Notifier.h"
+
 class TorrentDownloader
 {
 public:
-	TorrentDownloader();
+	TorrentDownloader(Notifier & notifier);
 	~TorrentDownloader();
 
 	void DownloadWithMagnet(const std::string & magnet_url);
+	void DownlloadWithTorrentFile(const std::string & torrentPath);
+	std::string GetVideoFile();
+	int GetDownloadProgress();
 
 private:
 	class Impl;

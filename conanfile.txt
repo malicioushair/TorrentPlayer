@@ -1,12 +1,5 @@
 [requires]
-qt/6.6.1
 libtorrent/2.0.9
-
-[options]
-qt/*:shared=True
-qt/*:qtdeclarative=True
-qt/*:qtshadertools=True
-qt/*:qtquickcontrols2=True
 
 [generators]
 CMakeDeps

@@ -1,12 +1,13 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 
+#include "GuiController/GuiController.h"
+#include "TorrentDownloader/Notifier.h"
+
 int main(int argc, char * argv[])
 {
 	QGuiApplication app(argc, argv);
-	QQmlApplicationEngine engine;
-	engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
-	if (engine.rootObjects().isEmpty())
-		return EXIT_FAILURE;
+	Notifier notifier;
+	TorrentPlayer::GuiController guiController(notifier);
 	return QGuiApplication::exec();
 }
