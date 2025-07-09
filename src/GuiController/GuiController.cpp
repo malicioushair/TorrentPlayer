@@ -3,7 +3,6 @@
 
 #include <QQmlContext>
 #include <QTimer>
-#include <iostream>
 
 using namespace TorrentPlayer;
 

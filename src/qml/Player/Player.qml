@@ -70,32 +70,46 @@ Video {
 
         ColumnLayout {
             anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left
+            anchors.right: parent.right
 
             width: parent.width
 
-            Slider {
-                id: seekBarID
-
+            Rectangle {
                 Layout.fillWidth: true
 
-                from: 0
-                value: videoID.position
-                to: videoID.duration
+                height: 40
 
-                onMoved: videoID.seek(seekBarID.value)
-            }
+                color: "transparent"
 
-            Slider {
-                id: downloadProgressID
+                ProgressBar {
+                    id: downloadProgressID
 
-                from: 0
-                value: guiController.downloadProgress
-                to: 100
+                    anchors.fill: parent
+
+                    from: 0
+                    value: guiController.downloadProgress
+                    to: 100
+                }
+
+                Slider {
+                    id: seekBarID
+
+                    anchors.fill: parent
+
+                    from: 0
+                    value: videoID.position
+                    to: videoID.duration
+
+                    onMoved: videoID.seek(seekBarID.value)
+                }
+
             }
 
             RowLayout {
                 Layout.fillWidth: true
-                Layout.topMargin: -20
+                Layout.topMargin: -10
+                Layout.bottomMargin: 10
 
                 Slider {
                     id: volumeControlID
@@ -110,21 +124,36 @@ Video {
                 Button {
                     id: playButtonID
 
-                    text: videoID.playbackState === MediaPlayer.PlayingState ? "Pause" : "Play"
+                    text: videoID.playbackState === MediaPlayer.PlayingState ? "⏸" : "▶"
                     onClicked: videoID.playbackState === MediaPlayer.PlayingState ? videoID.pause() : videoID.play()
                 }
+
                 Button {
                     id: stopButtonID
 
-                    text: "Stop"
+                    text: "◼"
                     onClicked: videoID.stop()
                 }
 
                 Button {
                     id: openFileButtonID
 
-                    text: "Open File"
+                    text: "📂"
                     onClicked: fileDialogID.open()
+                }
+
+                Label {
+                    id: currentTimeID
+
+                    Layout.fillWidth: true
+
+                    text: `${Math.floor(videoID.position / 60000)}:${Math.floor((videoID.position % 60000) / 1000).toString().padStart(2, '0')}`
+                }
+
+                Label {
+                    id: downloadPercentageID
+
+                    text: `${downloadProgressID.value}%`
                 }
             }
         }
