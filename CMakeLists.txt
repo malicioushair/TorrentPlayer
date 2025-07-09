@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(hello_qml VERSION 0.1.0 LANGUAGES CXX)
+project(TorrentPlayer VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -22,14 +22,19 @@ set(SOURCES src/main.cpp
             src/GuiController/GuiController.cpp
             src/GuiController/GuiController.h)
 
-add_executable(${PROJECT_NAME} ${SOURCES} ${QT_RESOURCES})
-target_link_libraries(${PROJECT_NAME} 
-    Qt6::Core
-    Qt6::Gui
+qt_add_executable(${PROJECT_NAME} ${SOURCES} ${QT_RESOURCES})
+if (APPLE)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        MACOSX_BUNDLE ON
+    )
+endif()
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Quick
     Qt6::QuickLayouts
     TorrentDownloader
 )
+qt_finalize_executable(${PROJECT_NAME})
 
 add_custom_command(TARGET ${PROJECT_NAME}  POST_BUILD
     COMMAND "${WINDEPLOYQT_EXECUTABLE}" --qmldir ${CMAKE_SOURCE_DIR} "$<TARGET_FILE:${PROJECT_NAME}>"
