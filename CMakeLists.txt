@@ -29,11 +29,24 @@ if (APPLE)
     )
 endif()
 
+qt6_import_qml_plugins(${PROJECT_NAME})
+
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Quick
     Qt6::QuickLayouts
     TorrentDownloader
 )
+
+qt_add_qml_module(torrentplayer_qml
+    URI TorrentPlayer
+    VERSION 1.0
+    QML_FILES
+        src/qml/main.qml
+        src/qml/Player/Player.qml
+    RESOURCES
+)
+target_link_libraries(TorrentPlayer PRIVATE torrentplayer_qml)
+
 qt_finalize_executable(${PROJECT_NAME})
 
 add_custom_command(TARGET ${PROJECT_NAME}  POST_BUILD
