@@ -4,6 +4,8 @@
 #include <QQmlContext>
 #include <QTimer>
 
+#include "glog/logging.h"
+
 using namespace TorrentPlayer;
 
 GuiController::GuiController(Notifier & notifier, QObject * parent)
@@ -15,7 +17,7 @@ GuiController::GuiController(Notifier & notifier, QObject * parent)
 	m_engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 	if (m_engine.rootObjects().isEmpty())
 	{
-		qFatal("Failed to load QML file: qrc:/main.qml");
+		LOG(ERROR) << "Failed to load QML file: qrc:/main.qml";
 		return;
 	}
 }

@@ -1,5 +1,6 @@
 [requires]
 libtorrent/2.0.9
+glog/0.7.1
 
 [generators]
 CMakeDeps

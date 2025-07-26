@@ -1,4 +1,5 @@
 find_package(LibtorrentRasterbar REQUIRED)
+find_package(GLog REQUIRED)
 
 add_library(TorrentDownloader 
     src/TorrentDownloader/TorrentDownloader.h
@@ -10,4 +11,5 @@ add_library(TorrentDownloader
 
 target_link_libraries(TorrentDownloader
     LibtorrentRasterbar::torrent-rasterbar
+    glog::glog
 )

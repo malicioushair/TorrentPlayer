@@ -13,6 +13,7 @@ execute_process(
 
 include(src/TorrentDownloader/TorrentDownloader.cmake)
 
+find_package(GLog REQUIRED)
 find_package(Qt6 COMPONENTS Core Gui Quick QuickLayouts REQUIRED)
 qt_standard_project_setup()
 
@@ -35,10 +36,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Quick
     Qt6::QuickLayouts
     TorrentDownloader
+    glog::glog
 )
 
 qt_add_qml_module(torrentplayer_qml
-    URI TorrentPlayer
+    URI ${PROJECT_NAME}
     VERSION 1.0
     QML_FILES
         src/qml/main.qml

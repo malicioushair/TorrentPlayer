@@ -15,6 +15,8 @@
 #include <libtorrent/torrent_status.hpp>
 #include <libtorrent/write_resume_data.hpp>
 
+#include "glog/logging.h"
+
 #include "Notifier.h"
 
 class TorrentDownloader::Impl
@@ -106,7 +108,7 @@ public:
 			}
 		}
 
-		std::cout << "\nDone, shutting down\n";
+		LOG(INFO) << "Torrent download completed. Video file: " << GetVideoFile();
 	}
 
 	void HandleAlert(const lt::alert * alert, bool & is_done)
@@ -134,13 +136,12 @@ public:
 				const lt::torrent_status & status = state_update_alert->status.front();
 				std::string torrent_name = m_torrentHandle.is_valid() && m_torrentHandle.torrent_file() ? m_torrentHandle.torrent_file()->name() : "<unknown>";
 
-				std::cout << "\r" << torrent_name << ": "
-						  << getTorrentStateName(status.state) << ' '
-						  << (status.download_payload_rate / 1000) << " kB/s "
-						  << (status.total_done / 1000) << " kB ("
-						  << (status.progress_ppm / 10000) << "%) downloaded ("
-						  << status.num_peers << " peers)\n";
-				std::cout.flush();
+				VLOG(1) << "\r" << torrent_name << ": "
+						<< getTorrentStateName(status.state) << ' '
+						<< (status.download_payload_rate / 1000) << " kB/s "
+						<< (status.total_done / 1000) << " kB ("
+						<< (status.progress_ppm / 10000) << "%) downloaded ("
+						<< status.num_peers << " peers)\n";
 
 				if (status.progress_ppm >= 100000) // 10% progress
 				{
