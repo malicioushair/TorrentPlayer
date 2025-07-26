@@ -47,11 +47,27 @@ qt_add_qml_module(torrentplayer_qml
         src/qml/Player/Player.qml
     RESOURCES
 )
-target_link_libraries(TorrentPlayer PRIVATE torrentplayer_qml)
+target_link_libraries(${PROJECT_NAME} PRIVATE torrentplayer_qml)
 
 qt_finalize_executable(${PROJECT_NAME})
 
-add_custom_command(TARGET ${PROJECT_NAME}  POST_BUILD
-    COMMAND "${WINDEPLOYQT_EXECUTABLE}" --qmldir ${CMAKE_SOURCE_DIR} "$<TARGET_FILE:${PROJECT_NAME}>"
-    COMMENT "Running windeployqt..."
+set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
+
+qt_generate_deploy_qml_app_script(
+    TARGET ${PROJECT_NAME}
+    OUTPUT_SCRIPT deploy_script
 )
+
+install(TARGETS ${PROJECT_NAME}
+        BUNDLE DESTINATION ${CMAKE_BINARY_DIR}/install
+        RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install)
+
+if (APPLE)
+    install(TARGETS torrentplayer_qml
+        LIBRARY DESTINATION TorrentPlayer.app/Contents/Frameworks
+    )
+else()
+    install(TARGETS torrentplayer_qml)
+endif()
+
+install(SCRIPT ${deploy_script})
