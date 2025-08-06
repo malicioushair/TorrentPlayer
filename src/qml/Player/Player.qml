@@ -31,7 +31,8 @@ Video {
         onAccepted: {
             guiController.DownloadWithTorrentFile(selectedFile)
 
-            videoID.source = guiController.videoFile //selectedFile
+            videoID.source = guiController.videoFile
+            // calling the play and pause to make it obvious that a video was added
             videoID.play()
             videoID.pause()
         }

@@ -4,10 +4,12 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <string>
 #include <thread>
 #include <vector>
 
 #include <libtorrent/add_torrent_params.hpp>
+#include <libtorrent/alert_types.hpp>
 #include <libtorrent/magnet_uri.hpp>
 #include <libtorrent/read_resume_data.hpp>
 #include <libtorrent/session.hpp>
@@ -20,14 +22,13 @@
 #include "Notifier.h"
 
 class TorrentDownloader::Impl
-// : public Notifier
+	: public Notifier
 {
 public:
 	Impl(Notifier & notifier)
 		: m_notifier(notifier)
 	{
-		m_settings.set_int(lt::settings_pack::alert_mask,
-			lt::alert_category::error | lt::alert_category::storage | lt::alert_category::status);
+		m_settings.set_int(lt::settings_pack::alert_mask, lt::alert_category::error | lt::alert_category::storage | lt::alert_category::status);
 		m_session = std::make_unique<lt::session>(m_settings);
 	}
 
@@ -48,7 +49,6 @@ public:
 			if (atp.info_hashes == magnetParams.info_hashes)
 				magnetParams = std::move(atp);
 		}
-		magnetParams.save_path = "."; // save in current dir
 		m_session->async_add_torrent(std::move(magnetParams));
 	}
 
@@ -60,13 +60,12 @@ public:
 
 		// 2.  Parse the .torrent
 		lt::error_code ec;
-		auto torrentInfo = std::make_shared<lt::torrent_info>(torrentPath, ec);
+		m_torrentInfo = std::make_shared<lt::torrent_info>(torrentPath, ec);
 		if (ec)
 			throw std::runtime_error("Invalid torrent file: " + ec.message());
 
 		lt::add_torrent_params atp;
-		atp.ti = torrentInfo; // the metadata
-		atp.save_path = ".";  // download here (cwd) – change as needed
+		atp.ti = m_torrentInfo; // the metadata
 
 		// 3.  Merge resume data if it matches this torrent
 		if (!resumeData.empty())
@@ -74,7 +73,7 @@ public:
 			auto r = lt::read_resume_data(resumeData, ec);
 			if (!ec && r.info_hashes == atp.ti->info_hashes())
 				atp = std::move(r); // re-use stored priorities, etc.
-			atp.ti = torrentInfo;   // make sure metadata is set
+			atp.ti = m_torrentInfo; // make sure metadata is set
 		}
 
 		// 4.  Hand it to the session (asynchronous)
@@ -183,7 +182,8 @@ public:
 	{
 		if (!m_torrentHandle.is_valid() || !m_torrentHandle.torrent_file())
 			return {};
-		return m_torrentHandle.torrent_file()->files().begin_deprecated()->filename().to_string();
+
+		return m_torrentHandle.status().save_path + m_torrentHandle.torrent_file()->files().begin_deprecated()->filename().to_string();
 	}
 
 private:
@@ -201,6 +201,7 @@ private:
 	std::string m_resumeFile { ".resume_file" };
 	bool m_isVideoReady { false };
 	int m_downloadProgress { 0 };
+	std::shared_ptr<lt::torrent_info> m_torrentInfo;
 };
 
 TorrentDownloader::TorrentDownloader(Notifier & notifier)
@@ -238,12 +239,12 @@ void TorrentDownloader::DownlloadWithTorrentFile(const std::string & torrentPath
 	}
 }
 
-std::string TorrentDownloader::GetVideoFile()
+std::string TorrentDownloader::GetVideoFile() const
 {
 	return m_impl->GetVideoFile();
 }
 
-int TorrentDownloader::GetDownloadProgress()
+int TorrentDownloader::GetDownloadProgress() const
 {
 	return m_impl->GetDownloadProgress();
 }
