@@ -17,10 +17,12 @@ class GuiController
 
 	Q_PROPERTY(QUrl videoFile READ GetVideoFile NOTIFY readyToPlayVideo)
 	Q_PROPERTY(int downloadProgress READ GetDownloadProgress NOTIFY downloadProgressChanged)
+	Q_PROPERTY(QString savePath READ GetSavePath WRITE SetSavePath NOTIFY savePathChanged)
 
 signals:
 	void readyToPlayVideo();
 	void downloadProgressChanged();
+	void savePathChanged();
 
 public:
 	GuiController(Notifier & notifier, QObject * parent = nullptr);
@@ -35,9 +37,13 @@ public: // IObserver
 
 private:
 	int GetDownloadProgress();
+	QString GetSavePath();
+	void SetSavePath(const QString & path);
 
 private:
 	QQmlApplicationEngine m_engine;
 	TorrentDownloader m_downloader;
+	struct Impl;
+	std::unique_ptr<Impl> m_impl;
 };
 } // namespace TorrentPlayer
