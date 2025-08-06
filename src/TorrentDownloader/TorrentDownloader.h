@@ -3,10 +3,6 @@
 #include <memory>
 #include <string>
 
-#include <libtorrent/alert_types.hpp>
-#include <libtorrent/session.hpp>
-#include <libtorrent/torrent_status.hpp>
-
 #include "TorrentDownloader/Notifier.h"
 
 class TorrentDownloader
@@ -17,8 +13,8 @@ public:
 
 	void DownloadWithMagnet(const std::string & magnet_url);
 	void DownlloadWithTorrentFile(const std::string & torrentPath);
-	std::string GetVideoFile();
-	int GetDownloadProgress();
+	std::string GetVideoFile() const;
+	int GetDownloadProgress() const;
 
 private:
 	class Impl;

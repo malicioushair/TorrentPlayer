@@ -6,4 +6,8 @@
     <qresource prefix="/Player">
         <file alias="Player.qml">../src/qml/Player/Player.qml</file>
     </qresource>
+    <qresource prefix="/SettingsDialog">
+        <file alias="SettingsDialog.qml">../src/qml/SettingsDialog/SettingsDialog.qml</file>
+        <file alias="SettingsDialogItem.qml">../src/qml/SettingsDialog/SettingsDialogItem.qml</file>
+    </qresource>
 </RCC>

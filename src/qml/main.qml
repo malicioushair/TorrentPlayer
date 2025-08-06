@@ -1,10 +1,9 @@
-import QtQuick
 import QtQuick.Window
 import QtQuick.Layouts
 import QtQuick.Controls.Material
-import QtQuick.Dialogs
 
 import "Player"
+import "SettingsDialog"
 
 ApplicationWindow {
     id: mainWindowID
@@ -17,6 +16,25 @@ ApplicationWindow {
     minimumWidth: 640
     minimumHeight: 530
     title: "Torrent Video Player"
+
+    MenuBar {
+        Menu {
+            title: qsTr("TorrentPlayer")
+            MenuItem {
+                text: qsTr("Settings…")
+                onTriggered: settingsDialogID.open()
+            }
+            MenuSeparator {}
+            MenuItem {
+                text: qsTr("Quit")
+                onTriggered: Qt.quit()
+            }
+        }
+    }
+
+    SettingsDialog {
+        id: settingsDialogID
+    }
 
     ColumnLayout {
         anchors.fill: parent
