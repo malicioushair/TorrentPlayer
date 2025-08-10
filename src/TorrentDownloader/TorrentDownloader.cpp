@@ -37,7 +37,7 @@ public:
 		return m_downloadProgress;
 	}
 
-	void AddMagnetLink(const std::string & magnetUrl)
+	void AddMagnetLink(const std::string & magnetUrl, const std::string & savePath)
 	{
 		std::ifstream resumeStream(m_resumeFile, std::ios_base::binary);
 		std::vector<char> resumeData(std::istreambuf_iterator<char>(resumeStream), {});
@@ -49,10 +49,11 @@ public:
 			if (atp.info_hashes == magnetParams.info_hashes)
 				magnetParams = std::move(atp);
 		}
+		magnetParams.save_path = savePath;
 		m_session->async_add_torrent(std::move(magnetParams));
 	}
 
-	void AddTorrentFile(const std::string & torrentPath)
+	void AddTorrentFile(const std::string & torrentPath, const std::string & savePath)
 	{
 		// 1.  Load (optional) fast-resume data
 		std::ifstream resumeStream(m_resumeFile, std::ios_base::binary);
@@ -77,6 +78,7 @@ public:
 		}
 
 		// 4.  Hand it to the session (asynchronous)
+		atp.save_path = savePath;
 		m_session->async_add_torrent(std::move(atp));
 	}
 
@@ -141,6 +143,10 @@ public:
 						<< (status.total_done / 1000) << " kB ("
 						<< (status.progress_ppm / 10000) << "%) downloaded ("
 						<< status.num_peers << " peers)\n";
+
+				static constexpr auto CHUNK_SIZE = 16 * 1024 * 1024;
+				if (status.progress >= CHUNK_SIZE)
+					auto a = 0;
 
 				if (status.progress_ppm >= 100000) // 10% progress
 				{
@@ -211,11 +217,11 @@ TorrentDownloader::TorrentDownloader(Notifier & notifier)
 
 TorrentDownloader::~TorrentDownloader() = default;
 
-void TorrentDownloader::DownloadWithMagnet(const std::string & magnet_url)
+void TorrentDownloader::DownloadWithMagnet(const std::string & magnet_url, const std::string & savePath)
 {
 	try
 	{
-		m_impl->AddMagnetLink(magnet_url);
+		m_impl->AddMagnetLink(magnet_url, savePath);
 		m_impl->DownloadTorrent();
 	}
 	catch (const std::exception & e)
@@ -224,11 +230,11 @@ void TorrentDownloader::DownloadWithMagnet(const std::string & magnet_url)
 	}
 }
 
-void TorrentDownloader::DownlloadWithTorrentFile(const std::string & torrentPath)
+void TorrentDownloader::DownloadWithTorrentFile(const std::string & torrentPath, const std::string & savePath)
 {
 	try
 	{
-		m_impl->AddTorrentFile(torrentPath);
+		m_impl->AddTorrentFile(torrentPath, savePath);
 		std::thread([this] {
 			m_impl->DownloadTorrent();
 		}).detach();

@@ -11,8 +11,8 @@ public:
 	TorrentDownloader(Notifier & notifier);
 	~TorrentDownloader();
 
-	void DownloadWithMagnet(const std::string & magnet_url);
-	void DownlloadWithTorrentFile(const std::string & torrentPath);
+	void DownloadWithMagnet(const std::string & magnet_url, const std::string & savePath);
+	void DownloadWithTorrentFile(const std::string & torrentPath, const std::string & savePath);
 	std::string GetVideoFile() const;
 	int GetDownloadProgress() const;
 

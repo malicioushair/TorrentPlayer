@@ -42,7 +42,9 @@ GuiController::~GuiController() = default;
 
 void GuiController::DownloadWithTorrentFile(const QUrl & filePath)
 {
-	m_impl->downloader.DownlloadWithTorrentFile(filePath.toLocalFile().toStdString());
+	const auto savePath = m_impl->settings.value(PATH).toString().toStdString();
+	const auto defaultSavePath = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation).toStdString();
+	m_impl->downloader.DownloadWithTorrentFile(filePath.toLocalFile().toStdString(), !savePath.empty() ? savePath : defaultSavePath);
 }
 
 QUrl TorrentPlayer::GuiController::GetVideoFile() const
