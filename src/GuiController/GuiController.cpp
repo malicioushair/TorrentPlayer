@@ -66,6 +66,13 @@ void TorrentPlayer::GuiController::OnDownloadProgressChanged()
 	emit downloadProgressChanged();
 }
 
+void TorrentPlayer::GuiController::OnCannotPlayVideo()
+{
+	emit showErrorMessage(
+		tr("Moov atom was not found."),
+		tr("Moov atom was not found at the beginning of the video. Wait until the video is downloaded."));
+}
+
 int TorrentPlayer::GuiController::GetDownloadProgress() const
 {
 	return m_impl->downloader.GetDownloadProgress();

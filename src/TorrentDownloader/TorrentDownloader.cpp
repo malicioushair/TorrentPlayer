@@ -2,9 +2,11 @@
 
 #include <chrono>
 #include <fstream>
+#include <ios>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -20,6 +22,11 @@
 #include "glog/logging.h"
 
 #include "Notifier.h"
+
+constexpr auto operator"" _MiB(unsigned long long x)
+{
+	return x * 1024 * 1024;
+}
 
 class TorrentDownloader::Impl
 	: public Notifier
@@ -82,6 +89,17 @@ public:
 		m_session->async_add_torrent(std::move(atp));
 	}
 
+	bool IsMoovFound(const size_t chunkSize)
+	{
+		const auto filePath = GetVideoFile();
+		std::ifstream in(filePath, std::ios::binary);
+		std::vector<char> buffer(chunkSize);
+		in.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+
+		const auto sv = std::string_view(buffer.cbegin(), buffer.cend());
+		return sv.find("ftyp") == std::string_view::npos || sv.find("moov") != std::string_view::npos;
+	}
+
 	void DownloadTorrent()
 	{
 		using namespace std::chrono;
@@ -105,11 +123,17 @@ public:
 				m_torrentHandle.set_flags(
 					lt::torrent_flags::sequential_download,
 					lt::torrent_flags::sequential_download);
+
+				static constexpr auto chunkSize = 16_MiB;
+				if (!m_isDownloadComplete && m_torrentHandle.status().total_wanted_done >= chunkSize && !IsMoovFound(chunkSize))
+					m_notifier.CannotPlayVideo();
+
 				lastSaveResume = steady_clock::now();
 			}
 		}
 
 		LOG(INFO) << "Torrent download completed. Video file: " << GetVideoFile();
+		m_isDownloadComplete = true;
 	}
 
 	void HandleAlert(const lt::alert * alert, bool & is_done)
@@ -143,10 +167,6 @@ public:
 						<< (status.total_done / 1000) << " kB ("
 						<< (status.progress_ppm / 10000) << "%) downloaded ("
 						<< status.num_peers << " peers)\n";
-
-				static constexpr auto CHUNK_SIZE = 16 * 1024 * 1024;
-				if (status.progress >= CHUNK_SIZE)
-					auto a = 0;
 
 				if (status.progress_ppm >= 100000) // 10% progress
 				{
@@ -189,7 +209,7 @@ public:
 		if (!m_torrentHandle.is_valid() || !m_torrentHandle.torrent_file())
 			return {};
 
-		return m_torrentHandle.status().save_path + m_torrentHandle.torrent_file()->files().begin_deprecated()->filename().to_string();
+		return m_torrentHandle.status().save_path + std::filesystem::path::preferred_separator + m_torrentHandle.torrent_file()->files().begin_deprecated()->filename().to_string();
 	}
 
 private:
@@ -208,6 +228,7 @@ private:
 	bool m_isVideoReady { false };
 	int m_downloadProgress { 0 };
 	std::shared_ptr<lt::torrent_info> m_torrentInfo;
+	bool m_isDownloadComplete { false };
 };
 
 TorrentDownloader::TorrentDownloader(Notifier & notifier)

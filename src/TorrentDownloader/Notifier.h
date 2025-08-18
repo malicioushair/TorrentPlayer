@@ -39,6 +39,14 @@ public:
 				observer->OnDownloadProgressChanged();
 	}
 
+	void CannotPlayVideo()
+	{
+		std::lock_guard<std::mutex> lock(m_mutex);
+		for (auto observer : m_observers)
+			if (observer)
+				observer->OnCannotPlayVideo();
+	}
+
 private:
 	std::vector<IObserver *> m_observers;
 	std::mutex m_mutex;
