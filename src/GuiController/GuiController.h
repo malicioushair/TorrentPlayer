@@ -23,6 +23,7 @@ signals:
 	void readyToPlayVideo();
 	void downloadProgressChanged();
 	void savePathChanged();
+	void showErrorMessage(const QString & text, const QString & description);
 
 public:
 	GuiController(Notifier & notifier, QObject * parent = nullptr);
@@ -34,6 +35,7 @@ public:
 public: // IObserver
 	void OnReadyToPlayVideo() override;
 	void OnDownloadProgressChanged() override;
+	void OnCannotPlayVideo() override;
 
 private:
 	int GetDownloadProgress() const;

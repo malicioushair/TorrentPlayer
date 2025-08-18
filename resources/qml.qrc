@@ -10,4 +10,7 @@
         <file alias="SettingsDialog.qml">../src/qml/SettingsDialog/SettingsDialog.qml</file>
         <file alias="SettingsDialogItem.qml">../src/qml/SettingsDialog/SettingsDialogItem.qml</file>
     </qresource>
+    <qresource prefix="/ErrorMessageDialog">
+        <file alias="ErrorMessageDialog.qml">../src/qml/ErrorMessageDialog/ErrorMessageDialog.qml</file>
+    </qresource>
 </RCC>

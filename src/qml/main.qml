@@ -4,9 +4,20 @@ import QtQuick.Controls.Material
 
 import "Player"
 import "SettingsDialog"
+import "ErrorMessageDialog"
 
 ApplicationWindow {
     id: mainWindowID
+
+    Connections {
+        target: guiController
+        function onShowErrorMessage(text, informativeText) {
+            errorMessageLoaderID.setSource("qrc:/ErrorMessageDialog/ErrorMessageDialog.qml", {
+                "text": text,
+                "informativeText": informativeText
+            })
+        }
+    }
 
     visible: true
 
@@ -32,8 +43,13 @@ ApplicationWindow {
         }
     }
 
-    SettingsDialog {
-        id: settingsDialogID
+    Loader {
+        id: errorMessageLoaderID
+        onLoaded: item.open()
+    }
+
+    ErrorMessageDialog {
+        id: errorMessageDialogID
     }
 
     ColumnLayout {
