@@ -3,7 +3,7 @@
 #include <QQmlApplicationEngine>
 #include <QStandardPaths>
 
-#include "GuiController/GuiController.h"
+#include "Controllers/GuiController/GuiController.h"
 #include "TorrentDownloader/Notifier.h"
 
 #include "glog/logging.h"
