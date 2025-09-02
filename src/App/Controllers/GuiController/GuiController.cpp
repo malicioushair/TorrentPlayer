@@ -29,12 +29,15 @@ GuiController::GuiController(Notifier & notifier, QObject * parent)
 	, IObserver(notifier)
 	, m_impl(std::make_unique<Impl>(notifier))
 {
+	QQmlApplicationEngine engine;
 	m_impl->engine.rootContext()->setContextProperty("guiController", this);
-	m_impl->engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
+	m_impl->engine.addImportPath("qrc:/qt/qml");
+	m_impl->engine.loadFromModule("TorrentPlayer", "Main");
+
 	if (m_impl->engine.rootObjects().isEmpty())
 	{
-		LOG(ERROR) << "Failed to load QML file: qrc:/main.qml";
-		return;
+		LOG(ERROR) << "Failed to load QML";
+		throw std::runtime_error("Failed to load QML");
 	}
 }
 
