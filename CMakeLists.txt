@@ -7,8 +7,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 include_directories(src)
 
+include(cmake/Helpers.cmake)
+
 execute_process(
-    COMMAND conan install ${CMAKE_SOURCE_DIR} --build=missing --output-folder=${CMAKE_BINARY_DIR} -s build_type=Debug
+  COMMAND conan install ${CMAKE_SOURCE_DIR}
+          --build=missing
+          --output-folder=${CMAKE_BINARY_DIR}
+          -s build_type=${CMAKE_BUILD_TYPE}
 )
 
 include(src/TorrentDownloader/TorrentDownloader.cmake)
@@ -22,15 +27,12 @@ qt_generate_deploy_qml_app_script(
 )
 
 install(TARGETS ${PROJECT_NAME}
-        BUNDLE DESTINATION ${CMAKE_BINARY_DIR}/install
-        RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install)
-
-if (APPLE)
-    install(TARGETS torrentplayer_qml
-        LIBRARY DESTINATION TorrentPlayer.app/Contents/Frameworks
-    )
-else()
-    install(TARGETS torrentplayer_qml)
-endif()
+        BUNDLE DESTINATION  .
+        RUNTIME DESTINATION .)
 
 install(SCRIPT ${deploy_script})
+
+if (ON_BUILD_SERVER)
+    message("ON_BUILD_SERVER!")
+    SignAndDeploy()
+endif()
