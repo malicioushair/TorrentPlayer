@@ -8,6 +8,10 @@ find_package(GLog REQUIRED)
 find_package(Qt6 COMPONENTS Core Gui Quick QuickLayouts QuickControls2 REQUIRED)
 qt_standard_project_setup()
 
+if(QT_KNOWN_POLICY_QTP0004)
+    qt_policy(SET QTP0004 NEW)
+endif()
+
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_LIST_DIR}/*.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/*.h"
@@ -50,8 +54,6 @@ qt_add_qml_module(${PROJECT_NAME}
     QML_FILES
         ${REL_QML}
 )
-
-qt_finalize_executable(${PROJECT_NAME})
 
 target_link_libraries(TorrentDownloader
     LibtorrentRasterbar::torrent-rasterbar
