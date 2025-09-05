@@ -15,7 +15,7 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 qt_add_executable(${PROJECT_NAME} ${SOURCES} ${QT_RESOURCES})
 if (APPLE)
     configure_file(${CMAKE_SOURCE_DIR}/resources/mac/Info.plist.in ${CMAKE_BINARY_DIR}/Info.plist @ONLY)
-    set(APP_ICON resources/TorrentPlayer.icns)
+    set(APP_ICON resources/mac/TorrentPlayer.icns)
     set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE ON
         MACOSX_BUNDLE_ICON_FILE "TorrentPlayer"
