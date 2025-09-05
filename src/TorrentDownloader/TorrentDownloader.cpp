@@ -23,9 +23,56 @@
 
 #include "Notifier.h"
 
+namespace {
+
 constexpr auto operator"" _MiB(unsigned long long x)
 {
 	return x * 1024 * 1024;
+}
+
+inline void prioritizeFileTail(const lt::torrent_handle & torrentHandle, lt::file_index_t fileIndex, std::int64_t tailBytes)
+{
+	const auto torrentInfo = torrentHandle.torrent_file();
+	if (!torrentInfo)
+		return;
+
+	const auto & fileStorage = torrentInfo->files();
+	const auto fileSize = fileStorage.file_size(fileIndex);
+	if (fileSize <= 0)
+		return;
+
+	// how much of the end we want (clamped to file size)
+	tailBytes = std::max<std::int64_t>(1, std::min(tailBytes, fileSize));
+
+	const auto pieceLength = torrentInfo->piece_length();
+	const auto fileOffset = fileStorage.file_offset(fileIndex); // file start within the torrent
+	const auto firstPieceIdx = lt::piece_index_t((fileOffset) / pieceLength);
+	const auto lastPieceIdx = lt::piece_index_t((fileOffset + fileSize - 1) / pieceLength);
+
+	// which piece index contains the first byte of the "tail" region
+	const auto tailStartOffset = fileOffset + (fileSize - tailBytes);
+	const auto tailFirstPieceIdx = lt::piece_index_t(tailStartOffset / pieceLength);
+
+	// 1) Start with low priority everywhere
+	std::vector<lt::download_priority_t> prios(torrentInfo->num_pieces(), lt::download_priority_t { 1 });
+	torrentHandle.prioritize_pieces(prios);
+
+	// 2) Raise priority for the tail range
+	for (lt::piece_index_t pieceIdx = tailFirstPieceIdx; pieceIdx <= lastPieceIdx; ++pieceIdx)
+		torrentHandle.piece_priority(pieceIdx, libtorrent::top_priority);
+
+	// 3) Add deadlines so the tail is requested right away, scheduling from the very last piece backwards.
+	auto order = 0;
+	for (lt::piece_index_t pieceIdx = lastPieceIdx; pieceIdx >= tailFirstPieceIdx; --pieceIdx)
+	{
+		// 0 ms, 100 ms, 200 ms ... to keep an order without spamming
+		torrentHandle.set_piece_deadline(static_cast<int>(static_cast<int>(pieceIdx)), order * 100, lt::torrent_handle::alert_when_available);
+		++order;
+		if (pieceIdx == lt::piece_index_t(0))
+			break; // protect from wrap-around
+	}
+}
+
 }
 
 class TorrentDownloader::Impl
@@ -89,15 +136,36 @@ public:
 		m_session->async_add_torrent(std::move(atp));
 	}
 
-	bool IsMoovFound(const size_t chunkSize)
+	bool HasMoov(const size_t chunkSize)
 	{
 		const auto filePath = GetVideoFile();
 		std::ifstream in(filePath, std::ios::binary);
-		std::vector<char> buffer(chunkSize);
-		in.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+		if (!in)
+			return false;
 
-		const auto sv = std::string_view(buffer.cbegin(), buffer.cend());
-		return sv.find("ftyp") == std::string_view::npos || sv.find("moov") != std::string_view::npos;
+		in.seekg(0, std::ios::end);
+		const auto fileSize = static_cast<std::uint64_t>(in.tellg());
+		if (fileSize == 0)
+			return false;
+
+		const auto availableChunkSize = std::min<std::size_t>(chunkSize, static_cast<std::size_t>(fileSize));
+		std::vector<char> buffer(chunkSize);
+
+		const auto readHas = [&](std::uint64_t start, std::size_t n, std::string_view needle) {
+			in.seekg(static_cast<std::streamoff>(start), std::ios::beg);
+			in.read(buffer.data(), static_cast<std::streamsize>(n));
+			const auto got = in.gcount();
+			if (got == 0)
+				return false;
+			std::string_view sv(buffer.data(), got);
+			return sv.find(needle) != std::string_view::npos;
+		};
+
+		static constexpr auto MOOV = "moov";
+		const auto beginHasMoov = readHas(0, chunkSize, MOOV);
+		const auto endHasMoov = readHas(fileSize - chunkSize, chunkSize, MOOV);
+
+		return beginHasMoov || endHasMoov;
 	}
 
 	void DownloadTorrent()
@@ -125,8 +193,10 @@ public:
 					lt::torrent_flags::sequential_download);
 
 				static constexpr auto chunkSize = 16_MiB;
-				if (!m_isDownloadComplete && m_torrentHandle.status().total_wanted_done >= chunkSize && !IsMoovFound(chunkSize))
-					m_notifier.CannotPlayVideo();
+				if (!m_hasMoov)
+					m_hasMoov = HasMoov(chunkSize);
+				if (!m_isDownloadComplete && m_torrentHandle.status().total_wanted_done >= chunkSize && !m_hasMoov)
+					prioritizeFileTail(m_torrentHandle, libtorrent::file_index_t { 0 }, chunkSize);
 
 				lastSaveResume = steady_clock::now();
 			}
@@ -229,6 +299,7 @@ private:
 	int m_downloadProgress { 0 };
 	std::shared_ptr<lt::torrent_info> m_torrentInfo;
 	bool m_isDownloadComplete { false };
+	bool m_hasMoov { false };
 };
 
 TorrentDownloader::TorrentDownloader(Notifier & notifier)
