@@ -1,11 +1,13 @@
 #include <QDir>
 #include <QGuiApplication>
+#include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QStandardPaths>
 
 #include "Controllers/GuiController/GuiController.h"
 #include "TorrentDownloader/Notifier.h"
 
+#include "Utils/Utils.h"
 #include "glog/logging.h"
 
 void InitLogging(const std::string & execName)
@@ -34,6 +36,9 @@ int main(int argc, char * argv[])
 	LOG(INFO) << "Starting TorrentPlayer application";
 
 	QGuiApplication app(argc, argv);
+	if constexpr (IsWin())
+		app.setWindowIcon(QIcon(":/resources/icon.png"));
+
 	Notifier notifier;
 	TorrentPlayer::GuiController guiController(notifier);
 	return QGuiApplication::exec();

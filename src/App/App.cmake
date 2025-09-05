@@ -29,6 +29,12 @@ if (APPLE)
         MACOSX_PACKAGE_LOCATION "Resources"
     )
     target_sources(${PROJECT_NAME} PRIVATE ${APP_ICON})
+elseif(WIN32)
+    set_target_properties(${PROJECT_NAME}
+        PROPERTIES
+            WIN32_EXECUTABLE TRUE
+    )
+    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/resources/win/appicon.rc)
 endif()
 
 qt6_import_qml_plugins(${PROJECT_NAME})
@@ -54,6 +60,13 @@ qt_add_qml_module(${PROJECT_NAME}
     QML_FILES
         ${REL_QML}
 )
+
+if (WIN32)
+    qt_add_resources(${PROJECT_NAME} win_extra_res
+        PREFIX "/"
+        FILES resources/icon.png
+    )
+endif()
 
 target_link_libraries(TorrentDownloader
     LibtorrentRasterbar::torrent-rasterbar
