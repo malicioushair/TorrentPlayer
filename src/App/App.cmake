@@ -1,5 +1,9 @@
 include(cmake/Helpers.cmake)
 
+set(APP_MAJOR_VERSION 0)
+set(APP_MINOR_VERSION 1)
+set(APP_PATCH_VERSION 0)
+
 find_package(GLog REQUIRED)
 find_package(Qt6 COMPONENTS Core Gui Quick QuickLayouts QuickControls2 REQUIRED)
 qt_standard_project_setup()
@@ -10,10 +14,12 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 )
 qt_add_executable(${PROJECT_NAME} ${SOURCES} ${QT_RESOURCES})
 if (APPLE)
+    configure_file(${CMAKE_SOURCE_DIR}/resources/mac/Info.plist.in ${CMAKE_BINARY_DIR}/Info.plist @ONLY)
     set(APP_ICON resources/TorrentPlayer.icns)
     set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE ON
         MACOSX_BUNDLE_ICON_FILE "TorrentPlayer"
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_BINARY_DIR}/Info.plist
     )
     set_source_files_properties(${APP_ICON} PROPERTIES
         MACOSX_PACKAGE_LOCATION "Resources"
