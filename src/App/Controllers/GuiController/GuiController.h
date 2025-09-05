@@ -31,6 +31,7 @@ public:
 
 	Q_INVOKABLE void DownloadWithTorrentFile(const QUrl & filePath);
 	Q_INVOKABLE QUrl GetVideoFile() const;
+	Q_INVOKABLE bool NeedShowMenuBar() const;
 
 public: // IObserver
 	void OnReadyToPlayVideo() override;

@@ -6,6 +6,8 @@
 #include <QSettings>
 #include <QStandardPaths>
 
+#include "App/Utils/Utils.h"
+
 #include "glog/logging.h"
 
 constexpr auto PATH = "PATH";
@@ -57,6 +59,11 @@ QUrl TorrentPlayer::GuiController::GetVideoFile() const
 		return {};
 
 	return QUrl::fromLocalFile(QString::fromStdString(videoFile));
+}
+
+bool TorrentPlayer::GuiController::NeedShowMenuBar() const
+{
+	return !IsWin();
 }
 
 void TorrentPlayer::GuiController::OnReadyToPlayVideo()
