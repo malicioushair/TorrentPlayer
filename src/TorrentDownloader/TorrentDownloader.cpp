@@ -9,6 +9,7 @@
 #include <string_view>
 #include <thread>
 #include <vector>
+#include <filesystem>
 
 #include <libtorrent/add_torrent_params.hpp>
 #include <libtorrent/alert_types.hpp>
@@ -279,7 +280,8 @@ public:
 		if (!m_torrentHandle.is_valid() || !m_torrentHandle.torrent_file())
 			return {};
 
-		return m_torrentHandle.status().save_path + std::filesystem::path::preferred_separator + m_torrentHandle.torrent_file()->files().begin_deprecated()->filename().to_string();
+		auto path = std::filesystem::path(m_torrentHandle.status().save_path) / std::filesystem::path(m_torrentHandle.torrent_file()->files().begin_deprecated()->filename().to_string());
+		return path.string();
 	}
 
 private:

@@ -41,6 +41,7 @@ ApplicationWindow {
                 onTriggered: Qt.quit()
             }
         }
+        visible: guiController.NeedShowMenuBar()
     }
 
     Loader {
