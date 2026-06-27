@@ -2,6 +2,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QStandardPaths>
+#include <exception>
 
 #include "Controllers/GuiController/GuiController.h"
 #include "TorrentDownloader/Notifier.h"
@@ -27,14 +28,25 @@ void InitLogging(const std::string & execName)
 
 int main(int argc, char * argv[])
 {
-	QCoreApplication::setOrganizationName("MyOrg");
-	QCoreApplication::setApplicationName("TorrentPlayer");
-	InitLogging(argv[0]);
+	try
+	{
+		QCoreApplication::setOrganizationName("MyOrg");
+		QCoreApplication::setApplicationName("TorrentPlayer");
+		InitLogging(argv[0]);
 
-	LOG(INFO) << "Starting TorrentPlayer application";
+		LOG(INFO) << "Starting TorrentPlayer application";
 
-	QGuiApplication app(argc, argv);
-	Notifier notifier;
-	TorrentPlayer::GuiController guiController(notifier);
-	return QGuiApplication::exec();
+		QGuiApplication app(argc, argv);
+		Notifier notifier;
+		TorrentPlayer::GuiController guiController(notifier);
+		return QGuiApplication::exec();
+	}
+	catch (const std::exception & ex)
+	{
+		LOG(ERROR) << "Exception caught in main:" << ex.what();
+	}
+	catch (...)
+	{
+		LOG(ERROR) << "Unknown exception caught in main.";
+	}
 }

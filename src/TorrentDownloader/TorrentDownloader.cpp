@@ -1,6 +1,7 @@
 #include "TorrentDownloader.h"
 
 #include <chrono>
+#include <filesystem>
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -30,7 +31,7 @@ constexpr auto operator"" _MiB(unsigned long long x)
 	return x * 1024 * 1024;
 }
 
-inline void prioritizeFileTail(const lt::torrent_handle & torrentHandle, lt::file_index_t fileIndex, std::int64_t tailBytes)
+inline void PrioritizeFileTail(const lt::torrent_handle & torrentHandle, lt::file_index_t fileIndex, std::int64_t tailBytes)
 {
 	const auto torrentInfo = torrentHandle.torrent_file();
 	if (!torrentInfo)
@@ -46,12 +47,12 @@ inline void prioritizeFileTail(const lt::torrent_handle & torrentHandle, lt::fil
 
 	const auto pieceLength = torrentInfo->piece_length();
 	const auto fileOffset = fileStorage.file_offset(fileIndex); // file start within the torrent
-	const auto firstPieceIdx = lt::piece_index_t((fileOffset) / pieceLength);
-	const auto lastPieceIdx = lt::piece_index_t((fileOffset + fileSize - 1) / pieceLength);
+	const auto firstPieceIdx = lt::piece_index_t(static_cast<int>(fileOffset) / pieceLength);
+	const auto lastPieceIdx = lt::piece_index_t(static_cast<int>(fileOffset + fileSize - 1) / pieceLength);
 
 	// which piece index contains the first byte of the "tail" region
 	const auto tailStartOffset = fileOffset + (fileSize - tailBytes);
-	const auto tailFirstPieceIdx = lt::piece_index_t(tailStartOffset / pieceLength);
+	const auto tailFirstPieceIdx = lt::piece_index_t(static_cast<int>(tailStartOffset) / pieceLength);
 
 	// 1) Start with low priority everywhere
 	std::vector<lt::download_priority_t> prios(torrentInfo->num_pieces(), lt::download_priority_t { 1 });
@@ -148,7 +149,6 @@ public:
 		if (fileSize == 0)
 			return false;
 
-		const auto availableChunkSize = std::min<std::size_t>(chunkSize, static_cast<std::size_t>(fileSize));
 		std::vector<char> buffer(chunkSize);
 
 		const auto readHas = [&](std::uint64_t start, std::size_t n, std::string_view needle) {
@@ -196,7 +196,7 @@ public:
 				if (!m_hasMoov)
 					m_hasMoov = HasMoov(chunkSize);
 				if (!m_isDownloadComplete && m_torrentHandle.status().total_wanted_done >= chunkSize && !m_hasMoov)
-					prioritizeFileTail(m_torrentHandle, libtorrent::file_index_t { 0 }, chunkSize);
+					PrioritizeFileTail(m_torrentHandle, libtorrent::file_index_t { 0 }, chunkSize);
 
 				lastSaveResume = steady_clock::now();
 			}
@@ -279,7 +279,7 @@ public:
 		if (!m_torrentHandle.is_valid() || !m_torrentHandle.torrent_file())
 			return {};
 
-		return m_torrentHandle.status().save_path + std::filesystem::path::preferred_separator + m_torrentHandle.torrent_file()->files().begin_deprecated()->filename().to_string();
+		return (std::filesystem::path(m_torrentHandle.status().save_path) / m_torrentHandle.torrent_file()->files().begin_deprecated()->filename().to_string()).string();
 	}
 
 private:
