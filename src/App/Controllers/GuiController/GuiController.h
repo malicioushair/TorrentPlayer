@@ -29,8 +29,10 @@ public:
 	GuiController(Notifier & notifier, QObject * parent = nullptr);
 	~GuiController();
 
-	Q_INVOKABLE void DownloadWithTorrentFile(const QUrl & filePath);
 	Q_INVOKABLE QUrl GetVideoFile() const;
+	Q_INVOKABLE void AddFile(const QUrl & filePath);
+
+	void DownloadWithTorrentFile(const QUrl & filePath);
 
 public: // IObserver
 	void OnReadyToPlayVideo() override;

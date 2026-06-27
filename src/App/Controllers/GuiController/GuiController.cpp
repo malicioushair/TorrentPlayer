@@ -2,15 +2,30 @@
 #include "TorrentDownloader/Observer.h"
 
 #include <QFileInfo>
+#include <QMimeDatabase>
 #include <QQmlContext>
 #include <QSettings>
 #include <QStandardPaths>
 
 #include "glog/logging.h"
 
+using namespace TorrentPlayer;
+
+namespace {
 constexpr auto PATH = "PATH";
 
-using namespace TorrentPlayer;
+bool IsVideoFile(const QUrl & url)
+{
+	if (!url.isLocalFile())
+		return false;
+	const QFileInfo fileInfo(url.toLocalFile());
+	if (!fileInfo.isFile())
+		return false;
+	const QMimeDatabase mimeDatabase;
+	const QMimeType mimeType = mimeDatabase.mimeTypeForFile(fileInfo);
+	return mimeType.name().startsWith("video/");
+}
+}
 
 struct GuiController::Impl
 {
@@ -22,6 +37,7 @@ struct GuiController::Impl
 	QQmlApplicationEngine engine;
 	TorrentDownloader downloader;
 	QSettings settings;
+	std::string videoFile {};
 };
 
 GuiController::GuiController(Notifier & notifier, QObject * parent)
@@ -48,15 +64,26 @@ void GuiController::DownloadWithTorrentFile(const QUrl & filePath)
 	const auto savePath = m_impl->settings.value(PATH).toString().toStdString();
 	const auto defaultSavePath = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation).toStdString();
 	m_impl->downloader.DownloadWithTorrentFile(filePath.toLocalFile().toStdString(), !savePath.empty() ? savePath : defaultSavePath);
+	m_impl->videoFile = m_impl->downloader.GetVideoFile();
 }
 
 QUrl TorrentPlayer::GuiController::GetVideoFile() const
 {
-	const auto videoFile = m_impl->downloader.GetVideoFile();
-	if (videoFile.empty() || QFileInfo(QString::fromStdString(videoFile)).isDir())
+	if (m_impl->videoFile.empty() || QFileInfo(QString::fromStdString(m_impl->videoFile)).isDir())
 		return {};
 
-	return QUrl::fromLocalFile(QString::fromStdString(videoFile));
+	return QUrl::fromLocalFile(QString::fromStdString(m_impl->videoFile));
+}
+
+void TorrentPlayer::GuiController::AddFile(const QUrl & filePath)
+{
+	const QFileInfo fileInfo(filePath.toLocalFile());
+	if (fileInfo.suffix() == "torrent")
+		DownloadWithTorrentFile(filePath);
+	else if (IsVideoFile(filePath))
+		m_impl->videoFile = filePath.path().toStdString();
+	else
+		emit showErrorMessage("Unknown file.", "Only video or torrent files are accepted.");
 }
 
 void TorrentPlayer::GuiController::OnReadyToPlayVideo()
