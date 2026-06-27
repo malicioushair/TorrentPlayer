@@ -5,7 +5,7 @@ set(APP_MINOR_VERSION 1)
 set(APP_PATCH_VERSION 0)
 
 find_package(GLog REQUIRED)
-find_package(Qt6 COMPONENTS Core Gui Quick QuickLayouts QuickControls2 REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Quick QuickLayouts QuickControls2 Multimedia REQUIRED)
 qt_standard_project_setup()
 
 if(QT_KNOWN_POLICY_QTP0004)
@@ -39,6 +39,7 @@ endif()
 qt6_import_qml_plugins(${PROJECT_NAME})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
+    Qt6::Multimedia
     Qt6::Quick
     Qt6::QuickLayouts
     Qt6::QuickControls2

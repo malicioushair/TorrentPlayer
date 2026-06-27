@@ -4,6 +4,7 @@
 
 #include <QObject>
 #include <QQmlApplicationEngine>
+#include <QStringList>
 
 #include "TorrentDownloader/Observer.h"
 
@@ -18,11 +19,15 @@ class GuiController
 	Q_PROPERTY(QUrl videoFile READ GetVideoFile NOTIFY readyToPlayVideo)
 	Q_PROPERTY(int downloadProgress READ GetDownloadProgress NOTIFY downloadProgressChanged)
 	Q_PROPERTY(QString savePath READ GetSavePath WRITE SetSavePath NOTIFY savePathChanged)
+	Q_PROPERTY(QStringList audioTracks READ GetAudioTracks NOTIFY audioTracksChanged)
+	Q_PROPERTY(int activeAudioTrack READ GetActiveAudioTrack WRITE SetActiveAudioTrack NOTIFY activeAudioTrackChanged)
 
 signals:
 	void readyToPlayVideo();
 	void downloadProgressChanged();
 	void savePathChanged();
+	void audioTracksChanged();
+	void activeAudioTrackChanged();
 	void showErrorMessage(const QString & text, const QString & description);
 
 public:
@@ -45,6 +50,11 @@ private:
 	int GetDownloadProgress() const;
 	QString GetSavePath() const;
 	void SetSavePath(const QString & path);
+	QStringList GetAudioTracks() const;
+	int GetActiveAudioTrack() const;
+	void SetActiveAudioTrack(int trackIndex);
+	void LoadAudioTracks(const QUrl & filePath);
+	void UpdateAudioTracks();
 
 private:
 	struct Impl;
