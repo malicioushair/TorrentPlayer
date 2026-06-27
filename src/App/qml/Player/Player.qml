@@ -29,7 +29,7 @@ Video {
     FileDialog {
         id: fileDialogID
         onAccepted: {
-            guiController.DownloadWithTorrentFile(selectedFile)
+            guiController.AddFile(selectedFile)
 
             videoID.source = guiController.videoFile
             // calling the play and pause to make it obvious that a video was added
