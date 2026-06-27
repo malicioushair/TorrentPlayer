@@ -29,6 +29,8 @@ public:
 	GuiController(Notifier & notifier, QObject * parent = nullptr);
 	~GuiController();
 
+	Q_INVOKABLE bool IsDebug();
+	Q_INVOKABLE void BumpHotReloadToken();
 	Q_INVOKABLE QUrl GetVideoFile() const;
 	Q_INVOKABLE void AddFile(const QUrl & filePath);
 

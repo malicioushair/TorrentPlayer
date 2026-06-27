@@ -1,10 +1,9 @@
+import QtQuick
 import QtQuick.Window
-import QtQuick.Layouts
 import QtQuick.Controls.Material
 
-import "Player"
-import "SettingsDialog"
 import "ErrorMessageDialog"
+import "SettingsDialog"
 
 ApplicationWindow {
     id: mainWindowID
@@ -12,7 +11,7 @@ ApplicationWindow {
     Connections {
         target: guiController
         function onShowErrorMessage(text, informativeText) {
-            errorMessageLoaderID.setSource("qrc:/ErrorMessageDialog/ErrorMessageDialog.qml", {
+            errorMessageLoaderID.setSource("ErrorMessageDialog/ErrorMessageDialog.qml", {
                 "text": text,
                 "informativeText": informativeText
             })
@@ -43,6 +42,20 @@ ApplicationWindow {
         }
     }
 
+    Shortcut {
+        sequences: ["Ctrl+R"]
+        context: Qt.ApplicationShortcut
+        onActivated: {
+            if (!guiController.IsDebug())
+                return
+
+            guiController.BumpHotReloadToken()
+            const base = Qt.resolvedUrl("MainWindow.qml")
+            mainWindowLoaderID.source = ""
+            mainWindowLoaderID.source = base + "?r=" + Date.now()
+        }
+    }
+
     Loader {
         id: errorMessageLoaderID
         onLoaded: item.open()
@@ -52,14 +65,11 @@ ApplicationWindow {
         id: errorMessageDialogID
     }
 
-    ColumnLayout {
+    Loader {
+        id: mainWindowLoaderID
+
         anchors.fill: parent
-
-        Player {
-            id: playerID
-
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-        }
+        source: "MainWindow.qml"
+        focus: true
     }
 }

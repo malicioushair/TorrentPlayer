@@ -1,11 +1,19 @@
 #include "GuiController.h"
 #include "TorrentDownloader/Observer.h"
 
+#include <QDateTime>
 #include <QFileInfo>
 #include <QMimeDatabase>
+#include <QQmlAbstractUrlInterceptor>
 #include <QQmlContext>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QStringLiteral>
+#include <QUrlQuery>
+
+#include <memory>
+#include <string>
+#include <utility>
 
 #include "glog/logging.h"
 
@@ -13,6 +21,48 @@ using namespace TorrentPlayer;
 
 namespace {
 constexpr auto PATH = "PATH";
+
+class HotReloadUrlInterceptor
+	: public QQmlAbstractUrlInterceptor
+{
+public:
+	explicit HotReloadUrlInterceptor(std::string token = {})
+		: m_token(std::move(token))
+	{
+	}
+
+	void SetToken(const std::string & token)
+	{
+		m_token = token;
+	}
+
+	QUrl intercept(const QUrl & url, DataType type) override
+	{
+		if (true
+			&& type != QQmlAbstractUrlInterceptor::QmlFile
+			&& type != QQmlAbstractUrlInterceptor::JavaScriptFile
+			&& type != QQmlAbstractUrlInterceptor::QmldirFile)
+			return url;
+
+		if (m_token.empty())
+			return url;
+
+		const auto scheme = url.scheme();
+		if (scheme != QStringLiteral("file") && scheme != QStringLiteral("qrc"))
+			return url;
+
+		QUrl result(url);
+		QUrlQuery query(result);
+		query.removeAllQueryItems("r");
+		query.addQueryItem("r", QString::fromStdString(m_token));
+		result.setQuery(query);
+
+		return result;
+	}
+
+private:
+	std::string m_token;
+};
 
 bool IsVideoFile(const QUrl & url)
 {
@@ -38,6 +88,18 @@ struct GuiController::Impl
 	TorrentDownloader downloader;
 	QSettings settings;
 	std::string videoFile {};
+	std::unique_ptr<HotReloadUrlInterceptor> interceptor { std::make_unique<HotReloadUrlInterceptor>() };
+
+	void LoadQml()
+	{
+		engine.
+#ifndef NDEBUG
+			load(MAIN_QML)
+#else
+			loadFromModule("TorrentPlayer", "Main")
+#endif
+			;
+	}
 };
 
 GuiController::GuiController(Notifier & notifier, QObject * parent)
@@ -45,10 +107,10 @@ GuiController::GuiController(Notifier & notifier, QObject * parent)
 	, IObserver(notifier)
 	, m_impl(std::make_unique<Impl>(notifier))
 {
-	QQmlApplicationEngine engine;
 	m_impl->engine.rootContext()->setContextProperty("guiController", this);
 	m_impl->engine.addImportPath("qrc:/qt/qml");
-	m_impl->engine.loadFromModule("TorrentPlayer", "Main");
+	m_impl->engine.addUrlInterceptor(m_impl->interceptor.get());
+	m_impl->LoadQml();
 
 	if (m_impl->engine.rootObjects().isEmpty())
 	{
@@ -58,6 +120,23 @@ GuiController::GuiController(Notifier & notifier, QObject * parent)
 }
 
 GuiController::~GuiController() = default;
+
+bool GuiController::IsDebug()
+{
+	return
+#ifndef NDEBUG
+		true
+#else
+		false
+#endif
+		;
+}
+
+void GuiController::BumpHotReloadToken()
+{
+	m_impl->interceptor->SetToken(QString::number(QDateTime::currentSecsSinceEpoch()).toStdString());
+	m_impl->engine.clearComponentCache();
+}
 
 void GuiController::DownloadWithTorrentFile(const QUrl & filePath)
 {

@@ -17,6 +17,11 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_LIST_DIR}/*.h"
 )
 qt_add_executable(${PROJECT_NAME} ${SOURCES} ${QT_RESOURCES})
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_definitions(${PROJECT_NAME} PRIVATE NDEBUG=1)
+else()
+    target_compile_definitions(${PROJECT_NAME} PRIVATE MAIN_QML="${CMAKE_CURRENT_LIST_DIR}/qml/main.qml")
+endif()
 if (APPLE)
     configure_file(${CMAKE_SOURCE_DIR}/resources/mac/Info.plist.in ${CMAKE_BINARY_DIR}/Info.plist @ONLY)
     set(APP_ICON resources/mac/TorrentPlayer.icns)
