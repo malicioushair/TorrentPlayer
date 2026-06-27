@@ -1,0 +1,265 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  QT_VERSION: "6.10.2"
+  BUILD_TYPE: Release
+  BUILD_DIR: build
+
+jobs:
+  clang-tidy:
+    name: clang-tidy
+    runs-on: macos-15
+    timeout-minutes: 120
+    environment: default
+    env:
+      BUILD_DIR: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install build tools
+        run: brew install cmake ninja llvm
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Conan
+        run: pip install conan
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: mac
+          target: desktop
+          arch: clang_64
+          cache: true
+
+      - name: Configure Conan profile
+        run: conan profile detect --force
+
+      - name: Install Conan dependencies
+        run: |
+          conan install . \
+            -pr:b=default \
+            -of "${{ env.BUILD_DIR }}" \
+            -s build_type=${{ env.BUILD_TYPE }} \
+            --build=missing
+
+      - name: Configure CMake
+        run: |
+          MACOS_SDK="$(xcrun --sdk macosx --show-sdk-path)"
+          MACOS_CXX_INCLUDE="$MACOS_SDK/usr/include/c++/v1"
+
+          cmake -G Ninja -S . -B "${{ env.BUILD_DIR }}" \
+            -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_OSX_SYSROOT="$MACOS_SDK" \
+            -DCMAKE_CXX_FLAGS="-isystem $MACOS_CXX_INCLUDE" \
+            -DCMAKE_PREFIX_PATH="${QT_ROOT_DIR};${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DQT_HOST_PATH="${QT_ROOT_DIR}" \
+            -DGLog_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DLibtorrentRasterbar_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}"
+
+      - name: Generate Qt moc files
+        run: cmake --build "${{ env.BUILD_DIR }}" --target TorrentPlayer_autogen
+
+      - name: Run clang-tidy
+        env:
+          CLANG_TIDY: /opt/homebrew/opt/llvm/bin/clang-tidy
+        run: python3 scripts/run-clang-tidy.py --build-dir "${{ env.BUILD_DIR }}"
+
+  macos-build:
+    name: macOS Build & Test
+    runs-on: macos-15
+    timeout-minutes: 120
+    environment: default
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install build tools
+        run: brew install cmake ninja
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Conan
+        run: pip install conan
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: mac
+          target: desktop
+          arch: clang_64
+          cache: true
+
+      - name: Configure Conan profile
+        run: conan profile detect --force
+
+      - name: Install Conan dependencies
+        run: |
+          conan install . \
+            -pr:b=default \
+            -of "${{ env.BUILD_DIR }}" \
+            -s build_type=${{ env.BUILD_TYPE }} \
+            --build=missing
+
+      - name: Configure CMake
+        run: |
+          MACOS_SDK="$(xcrun --sdk macosx --show-sdk-path)"
+
+          cmake -G Ninja -S . -B "${{ env.BUILD_DIR }}" \
+            -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
+            -DCMAKE_OSX_SYSROOT="$MACOS_SDK" \
+            -DCMAKE_PREFIX_PATH="${QT_ROOT_DIR};${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DQT_HOST_PATH="${QT_ROOT_DIR}" \
+            -DGLog_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DLibtorrentRasterbar_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}"
+
+      - name: Build
+        run: cmake --build "${{ env.BUILD_DIR }}" --parallel
+
+      - name: Run tests
+        run: ctest --test-dir "${{ env.BUILD_DIR }}" --output-on-failure
+
+  linux-build:
+    name: Linux Build & Test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    environment: default
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libgl1-mesa-dev \
+            libxkbcommon-x11-0 \
+            ninja-build \
+            pkg-config
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Conan
+        run: pip install conan
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          cache: true
+
+      - name: Configure Conan profile
+        run: conan profile detect --force
+
+      - name: Install Conan dependencies
+        run: |
+          conan install . \
+            -pr:b=default \
+            -of "${{ env.BUILD_DIR }}" \
+            -s build_type=${{ env.BUILD_TYPE }} \
+            --build=missing
+
+      - name: Configure CMake
+        run: |
+          cmake -G Ninja -S . -B "${{ env.BUILD_DIR }}" \
+            -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
+            -DCMAKE_PREFIX_PATH="${QT_ROOT_DIR};${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DQT_HOST_PATH="${QT_ROOT_DIR}" \
+            -DGLog_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DLibtorrentRasterbar_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}"
+
+      - name: Build
+        run: cmake --build "${{ env.BUILD_DIR }}" --parallel
+
+      - name: Run tests
+        run: ctest --test-dir "${{ env.BUILD_DIR }}" --output-on-failure
+
+  windows-build:
+    name: Windows Build & Test
+    runs-on: windows-2022
+    timeout-minutes: 120
+    environment: default
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Conan
+        run: pip install conan
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          cache: true
+
+      - name: Configure Conan profile
+        run: conan profile detect --force
+
+      - name: Install Conan dependencies
+        run: >
+          conan install .
+          -pr:b=default
+          -of "${{ env.BUILD_DIR }}"
+          -s build_type=${{ env.BUILD_TYPE }}
+          --build=missing
+
+      - name: Configure CMake
+        run: >
+          cmake -G Ninja -S . -B "${{ env.BUILD_DIR }}"
+          -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}"
+          -DCMAKE_PREFIX_PATH="${env:QT_ROOT_DIR};${{ github.workspace }}\${{ env.BUILD_DIR }}"
+          -DQT_HOST_PATH="${env:QT_ROOT_DIR}"
+          -DGLog_DIR="${{ github.workspace }}\${{ env.BUILD_DIR }}"
+          -DLibtorrentRasterbar_DIR="${{ github.workspace }}\${{ env.BUILD_DIR }}"
+
+      - name: Build
+        run: cmake --build "${{ env.BUILD_DIR }}" --parallel
+
+      - name: Run tests
+        run: ctest --test-dir "${{ env.BUILD_DIR }}" --output-on-failure

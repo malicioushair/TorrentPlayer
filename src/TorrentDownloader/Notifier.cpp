@@ -1,5 +1,6 @@
 #include "Notifier.h"
 
+#include <algorithm>
 #include <functional>
 #include <memory>
 
