@@ -3,6 +3,8 @@
 
 #include <QDateTime>
 #include <QFileInfo>
+#include <QMediaMetaData>
+#include <QMediaPlayer>
 #include <QMimeDatabase>
 #include <QQmlAbstractUrlInterceptor>
 #include <QQmlContext>
@@ -75,6 +77,26 @@ bool IsVideoFile(const QUrl & url)
 	const QMimeType mimeType = mimeDatabase.mimeTypeForFile(fileInfo);
 	return mimeType.name().startsWith("video/");
 }
+
+QString GetAudioTrackLabel(const QMediaMetaData & track, int index)
+{
+	QStringList details;
+	const auto title = track.stringValue(QMediaMetaData::Title);
+	const auto language = track.stringValue(QMediaMetaData::Language);
+	const auto codec = track.stringValue(QMediaMetaData::AudioCodec);
+
+	if (!title.isEmpty())
+		details.push_back(title);
+	if (!language.isEmpty())
+		details.push_back(language);
+	if (!codec.isEmpty())
+		details.push_back(codec);
+
+	if (details.empty())
+		return QStringLiteral("Track %1").arg(index + 1);
+
+	return QStringLiteral("Track %1: %2").arg(index + 1).arg(details.join(QStringLiteral(" / ")));
+}
 }
 
 struct GuiController::Impl
@@ -86,8 +108,11 @@ struct GuiController::Impl
 
 	QQmlApplicationEngine engine;
 	TorrentDownloader downloader;
+	QMediaPlayer mediaInfoReader;
 	QSettings settings;
 	std::string videoFile {};
+	QStringList audioTracks;
+	int activeAudioTrack { -1 };
 	std::unique_ptr<HotReloadUrlInterceptor> interceptor { std::make_unique<HotReloadUrlInterceptor>() };
 
 	void LoadQml()
@@ -110,6 +135,7 @@ GuiController::GuiController(Notifier & notifier, QObject * parent)
 	m_impl->engine.rootContext()->setContextProperty("guiController", this);
 	m_impl->engine.addImportPath("qrc:/qt/qml");
 	m_impl->engine.addUrlInterceptor(m_impl->interceptor.get());
+	connect(&m_impl->mediaInfoReader, &QMediaPlayer::tracksChanged, this, &GuiController::UpdateAudioTracks);
 	m_impl->LoadQml();
 
 	if (m_impl->engine.rootObjects().isEmpty())
@@ -144,6 +170,7 @@ void GuiController::DownloadWithTorrentFile(const QUrl & filePath)
 	const auto defaultSavePath = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation).toStdString();
 	m_impl->downloader.DownloadWithTorrentFile(filePath.toLocalFile().toStdString(), !savePath.empty() ? savePath : defaultSavePath);
 	m_impl->videoFile = m_impl->downloader.GetVideoFile();
+	LoadAudioTracks(GetVideoFile());
 }
 
 QUrl TorrentPlayer::GuiController::GetVideoFile() const
@@ -160,13 +187,18 @@ void TorrentPlayer::GuiController::AddFile(const QUrl & filePath)
 	if (fileInfo.suffix() == "torrent")
 		DownloadWithTorrentFile(filePath);
 	else if (IsVideoFile(filePath))
+	{
 		m_impl->videoFile = filePath.path().toStdString();
+		LoadAudioTracks(filePath);
+	}
 	else
 		emit showErrorMessage("Unknown file.", "Only video or torrent files are accepted.");
 }
 
 void TorrentPlayer::GuiController::OnReadyToPlayVideo()
 {
+	m_impl->videoFile = m_impl->downloader.GetVideoFile();
+	LoadAudioTracks(GetVideoFile());
 	emit readyToPlayVideo();
 }
 
@@ -199,4 +231,57 @@ void TorrentPlayer::GuiController::SetSavePath(const QString & path)
 {
 	m_impl->settings.setValue(PATH, path);
 	emit savePathChanged();
+}
+
+QStringList TorrentPlayer::GuiController::GetAudioTracks() const
+{
+	return m_impl->audioTracks;
+}
+
+int TorrentPlayer::GuiController::GetActiveAudioTrack() const
+{
+	return m_impl->activeAudioTrack;
+}
+
+void TorrentPlayer::GuiController::SetActiveAudioTrack(int trackIndex)
+{
+	if (m_impl->activeAudioTrack == trackIndex)
+		return;
+
+	m_impl->activeAudioTrack = trackIndex;
+	emit activeAudioTrackChanged();
+}
+
+void TorrentPlayer::GuiController::LoadAudioTracks(const QUrl & filePath)
+{
+	if (filePath.isEmpty())
+		return;
+
+	if (!m_impl->audioTracks.empty())
+	{
+		m_impl->audioTracks.clear();
+		emit audioTracksChanged();
+	}
+
+	SetActiveAudioTrack(-1);
+	m_impl->mediaInfoReader.setSource(filePath);
+}
+
+void TorrentPlayer::GuiController::UpdateAudioTracks()
+{
+	QStringList audioTracks;
+	const auto mediaTracks = m_impl->mediaInfoReader.audioTracks();
+	for (int i = 0; i < mediaTracks.size(); ++i)
+		audioTracks.push_back(GetAudioTrackLabel(mediaTracks[i], i));
+
+	if (m_impl->audioTracks != audioTracks)
+	{
+		m_impl->audioTracks = audioTracks;
+		emit audioTracksChanged();
+	}
+
+	if (audioTracks.empty())
+		SetActiveAudioTrack(-1);
+	else if (m_impl->activeAudioTrack < 0 || m_impl->activeAudioTrack >= audioTracks.size())
+		SetActiveAudioTrack(0);
 }

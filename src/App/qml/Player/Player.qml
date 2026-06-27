@@ -4,10 +4,28 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import QtQuick.Dialogs
 
-Video {
-    id: videoID
+Item {
+    id: playerRootID
 
     focus: true
+
+    MediaPlayer {
+        id: videoID
+
+        activeAudioTrack: guiController.activeAudioTrack
+        audioOutput: AudioOutput {
+            id: audioOutputID
+
+            volume: volumeControlID.value
+        }
+        videoOutput: videoOutputID
+    }
+
+    VideoOutput {
+        id: videoOutputID
+
+        anchors.fill: parent
+    }
 
     Keys.onSpacePressed: videoID.playbackState === MediaPlayer.PlayingState ? videoID.pause() : videoID.play()
     Keys.onLeftPressed: videoID.position = videoID.position - 5000
@@ -15,6 +33,12 @@ Video {
     Keys.onEscapePressed: {
         if (mainWindowID.visibility === Window.FullScreen)
             mainWindowID.visibility = Window.Windowed
+    }
+    Keys.onPressed: (event)=> {
+        if (event.key == Qt.Key_F) {
+            mainWindowID.visibility = mainWindowID.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen
+            event.accepted = true;
+        }
     }
 
     Connections {
@@ -102,7 +126,7 @@ Video {
                     value: videoID.position
                     to: videoID.duration
 
-                    onMoved: videoID.seek(seekBarID.value)
+                    onMoved: videoID.position = seekBarID.value
                 }
 
             }
@@ -116,10 +140,10 @@ Video {
                     id: volumeControlID
 
                     from: 0.0
-                    value: videoID.volume
+                    value: 1.0
                     to: 1.0
 
-                    onMoved: videoID.volume = volumeControlID.value
+                    onMoved: audioOutputID.volume = volumeControlID.value
                 }
 
                 Button {
