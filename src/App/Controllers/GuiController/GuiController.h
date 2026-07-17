@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QQmlApplicationEngine>
 #include <QStringList>
+#include <QtCore/qtmetamacros.h>
 
 #include "TorrentDownloader/Observer.h"
 
@@ -16,14 +17,15 @@ class GuiController
 	Q_OBJECT
 	Q_DISABLE_COPY(GuiController)
 
-	Q_PROPERTY(QUrl videoFile READ GetVideoFile NOTIFY readyToPlayVideo)
+public:
+	Q_PROPERTY(QUrl videoFile READ GetVideoFile NOTIFY videoFileUpdated)
 	Q_PROPERTY(int downloadProgress READ GetDownloadProgress NOTIFY downloadProgressChanged)
 	Q_PROPERTY(QString savePath READ GetSavePath WRITE SetSavePath NOTIFY savePathChanged)
 	Q_PROPERTY(QStringList audioTracks READ GetAudioTracks NOTIFY audioTracksChanged)
 	Q_PROPERTY(int activeAudioTrack READ GetActiveAudioTrack WRITE SetActiveAudioTrack NOTIFY activeAudioTrackChanged)
 
 signals:
-	void readyToPlayVideo();
+	void videoFileUpdated();
 	void downloadProgressChanged();
 	void savePathChanged();
 	void audioTracksChanged();
@@ -42,7 +44,7 @@ public:
 	void DownloadWithTorrentFile(const QUrl & filePath);
 
 public: // IObserver
-	void OnReadyToPlayVideo() override;
+	void OnVideoFileUpdated() override;
 	void OnDownloadProgressChanged() override;
 	void OnCannotPlayVideo() override;
 
@@ -55,6 +57,7 @@ private:
 	void SetActiveAudioTrack(int trackIndex);
 	void LoadAudioTracks(const QUrl & filePath);
 	void UpdateAudioTracks();
+	void UpdateSubtitlesVideoFile();
 
 private:
 	struct Impl;

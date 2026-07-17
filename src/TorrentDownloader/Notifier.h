@@ -14,7 +14,7 @@ public:
 
 	void RegisterObserver(IObserver * observer);
 	void UnregisterObserver(IObserver * observer);
-	void OnReadyToPlayVideo();
+	void OnVideoFileUpdated();
 	void OnDownloadProgressChanged();
 	void CannotPlayVideo();
 

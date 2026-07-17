@@ -244,7 +244,7 @@ public:
 					if (!m_isVideoReady)
 					{
 						m_isVideoReady = true;
-						m_notifier.OnReadyToPlayVideo();
+						m_notifier.OnVideoFileUpdated();
 					}
 				}
 
