@@ -1,5 +1,8 @@
 #include "GuiController.h"
-#include "TorrentDownloader/Observer.h"
+
+#include <memory>
+#include <string>
+#include <utility>
 
 #include <QDateTime>
 #include <QFileInfo>
@@ -13,11 +16,12 @@
 #include <QStringLiteral>
 #include <QUrlQuery>
 
-#include <memory>
-#include <string>
-#include <utility>
+#include <QtQml/qqml.h>
 
 #include "glog/logging.h"
+
+#include "SubtitlesController.h"
+#include "TorrentDownloader/Observer.h"
 
 using namespace TorrentPlayer;
 
@@ -101,8 +105,9 @@ QString GetAudioTrackLabel(const QMediaMetaData & track, int index)
 
 struct GuiController::Impl
 {
-	Impl(Notifier & notifier)
+	Impl(Notifier & notifier, const GuiController & guiController)
 		: downloader(notifier)
+		, guiController(guiController)
 	{
 	}
 
@@ -114,6 +119,8 @@ struct GuiController::Impl
 	QStringList audioTracks;
 	int activeAudioTrack { -1 };
 	std::unique_ptr<HotReloadUrlInterceptor> interceptor { std::make_unique<HotReloadUrlInterceptor>() };
+	const GuiController & guiController;
+	SubtitlesController * subtitlesController {};
 
 	void LoadQml()
 	{
@@ -130,7 +137,7 @@ struct GuiController::Impl
 GuiController::GuiController(Notifier & notifier, QObject * parent)
 	: QObject(parent)
 	, IObserver(notifier)
-	, m_impl(std::make_unique<Impl>(notifier))
+	, m_impl(std::make_unique<Impl>(notifier, *this))
 {
 	m_impl->engine.rootContext()->setContextProperty("guiController", this);
 	m_impl->engine.addImportPath("qrc:/qt/qml");
@@ -143,6 +150,22 @@ GuiController::GuiController(Notifier & notifier, QObject * parent)
 		LOG(ERROR) << "Failed to load QML";
 		throw std::runtime_error("Failed to load QML");
 	}
+
+	m_impl->subtitlesController = m_impl->engine.singletonInstance<SubtitlesController *>(
+		QStringLiteral("TorrentPlayer"),
+		QStringLiteral("SubtitlesController"));
+	if (!m_impl->subtitlesController)
+	{
+		LOG(ERROR) << "Failed to create the SubtitlesController QML singleton";
+		throw std::runtime_error("Failed to create the SubtitlesController QML singleton");
+	}
+
+	connect(
+		m_impl->subtitlesController,
+		&SubtitlesController::showErrorMessage,
+		this,
+		&GuiController::showErrorMessage);
+	UpdateSubtitlesVideoFile();
 }
 
 GuiController::~GuiController() = default;
@@ -171,9 +194,10 @@ void GuiController::DownloadWithTorrentFile(const QUrl & filePath)
 	m_impl->downloader.DownloadWithTorrentFile(filePath.toLocalFile().toStdString(), !savePath.empty() ? savePath : defaultSavePath);
 	m_impl->videoFile = m_impl->downloader.GetVideoFile();
 	LoadAudioTracks(GetVideoFile());
+	UpdateSubtitlesVideoFile();
 }
 
-QUrl TorrentPlayer::GuiController::GetVideoFile() const
+QUrl GuiController::GetVideoFile() const
 {
 	if (m_impl->videoFile.empty() || QFileInfo(QString::fromStdString(m_impl->videoFile)).isDir())
 		return {};
@@ -181,7 +205,7 @@ QUrl TorrentPlayer::GuiController::GetVideoFile() const
 	return QUrl::fromLocalFile(QString::fromStdString(m_impl->videoFile));
 }
 
-void TorrentPlayer::GuiController::AddFile(const QUrl & filePath)
+void GuiController::AddFile(const QUrl & filePath)
 {
 	const QFileInfo fileInfo(filePath.toLocalFile());
 	if (fileInfo.suffix() == "torrent")
@@ -190,36 +214,38 @@ void TorrentPlayer::GuiController::AddFile(const QUrl & filePath)
 	{
 		m_impl->videoFile = filePath.path().toStdString();
 		LoadAudioTracks(filePath);
+		UpdateSubtitlesVideoFile();
 	}
 	else
 		emit showErrorMessage("Unknown file.", "Only video or torrent files are accepted.");
 }
 
-void TorrentPlayer::GuiController::OnReadyToPlayVideo()
+void GuiController::OnVideoFileUpdated()
 {
 	m_impl->videoFile = m_impl->downloader.GetVideoFile();
 	LoadAudioTracks(GetVideoFile());
-	emit readyToPlayVideo();
+	UpdateSubtitlesVideoFile();
+	emit videoFileUpdated();
 }
 
-void TorrentPlayer::GuiController::OnDownloadProgressChanged()
+void GuiController::OnDownloadProgressChanged()
 {
 	emit downloadProgressChanged();
 }
 
-void TorrentPlayer::GuiController::OnCannotPlayVideo()
+void GuiController::OnCannotPlayVideo()
 {
 	emit showErrorMessage(
 		tr("Moov atom was not found."),
 		tr("Moov atom was not found at the beginning of the video. Wait until the video is downloaded."));
 }
 
-int TorrentPlayer::GuiController::GetDownloadProgress() const
+int GuiController::GetDownloadProgress() const
 {
 	return m_impl->downloader.GetDownloadProgress();
 }
 
-QString TorrentPlayer::GuiController::GetSavePath() const
+QString GuiController::GetSavePath() const
 {
 	if (const auto storedPath = m_impl->settings.value(PATH).toString(); storedPath.isEmpty())
 		return storedPath;
@@ -227,23 +253,23 @@ QString TorrentPlayer::GuiController::GetSavePath() const
 	return QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
 }
 
-void TorrentPlayer::GuiController::SetSavePath(const QString & path)
+void GuiController::SetSavePath(const QString & path)
 {
 	m_impl->settings.setValue(PATH, path);
 	emit savePathChanged();
 }
 
-QStringList TorrentPlayer::GuiController::GetAudioTracks() const
+QStringList GuiController::GetAudioTracks() const
 {
 	return m_impl->audioTracks;
 }
 
-int TorrentPlayer::GuiController::GetActiveAudioTrack() const
+int GuiController::GetActiveAudioTrack() const
 {
 	return m_impl->activeAudioTrack;
 }
 
-void TorrentPlayer::GuiController::SetActiveAudioTrack(int trackIndex)
+void GuiController::SetActiveAudioTrack(int trackIndex)
 {
 	if (m_impl->activeAudioTrack == trackIndex)
 		return;
@@ -252,7 +278,7 @@ void TorrentPlayer::GuiController::SetActiveAudioTrack(int trackIndex)
 	emit activeAudioTrackChanged();
 }
 
-void TorrentPlayer::GuiController::LoadAudioTracks(const QUrl & filePath)
+void GuiController::LoadAudioTracks(const QUrl & filePath)
 {
 	if (filePath.isEmpty())
 		return;
@@ -267,7 +293,7 @@ void TorrentPlayer::GuiController::LoadAudioTracks(const QUrl & filePath)
 	m_impl->mediaInfoReader.setSource(filePath);
 }
 
-void TorrentPlayer::GuiController::UpdateAudioTracks()
+void GuiController::UpdateAudioTracks()
 {
 	QStringList audioTracks;
 	const auto mediaTracks = m_impl->mediaInfoReader.audioTracks();
@@ -284,4 +310,10 @@ void TorrentPlayer::GuiController::UpdateAudioTracks()
 		SetActiveAudioTrack(-1);
 	else if (m_impl->activeAudioTrack < 0 || m_impl->activeAudioTrack >= audioTracks.size())
 		SetActiveAudioTrack(0);
+}
+
+void GuiController::UpdateSubtitlesVideoFile()
+{
+	if (m_impl->subtitlesController)
+		m_impl->subtitlesController->SetVideoFile(m_impl->videoFile);
 }

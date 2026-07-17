@@ -9,7 +9,7 @@ public:
 
 	virtual ~IObserver();
 
-	virtual void OnReadyToPlayVideo() = 0;
+	virtual void OnVideoFileUpdated() = 0;
 	virtual void OnDownloadProgressChanged() = 0;
 	virtual void OnCannotPlayVideo() = 0;
 

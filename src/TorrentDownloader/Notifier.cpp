@@ -44,9 +44,9 @@ void Notifier::UnregisterObserver(IObserver * observer)
 	m_impl->observers.erase(std::remove(m_impl->observers.begin(), m_impl->observers.end(), observer), m_impl->observers.end());
 }
 
-void Notifier::OnReadyToPlayVideo()
+void Notifier::OnVideoFileUpdated()
 {
-	m_impl->NotifyAll(&IObserver::OnReadyToPlayVideo);
+	m_impl->NotifyAll(&IObserver::OnVideoFileUpdated);
 }
 
 void Notifier::OnDownloadProgressChanged()

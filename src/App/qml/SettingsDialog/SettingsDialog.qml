@@ -11,18 +11,23 @@ Dialog {
     anchors.centerIn: parent
 
     width: 600
-    height: 260
+    height: 420
 
     title: qsTr("Settings")
     modal: true
     standardButtons: Dialog.Ok | Dialog.Cancel
+
+    Loader {
+        id: subtitlesDialogLoaderID
+        onLoaded: item.open()
+    }
 
     ColumnLayout {
         id: settingsDialogLayoutID
 
         anchors.fill: parent
 
-        spacing: 16
+        spacing: 50
 
         SettingsDialogItem {
             id: savePathItemID
@@ -72,6 +77,11 @@ Dialog {
                     guiController.activeAudioTrack = index
                 }
             }
+        }
+
+        Button {
+            text: qsTr("Subtitles settings...")
+            onPressed: subtitlesDialogLoaderID.setSource("SubtitlesSettingsDialog.qml")
         }
 
     }

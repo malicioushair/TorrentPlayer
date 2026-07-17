@@ -4,6 +4,8 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import QtQuick.Dialogs
 
+import TorrentPlayer
+
 Item {
     id: playerRootID
 
@@ -13,6 +15,7 @@ Item {
         id: videoID
 
         activeAudioTrack: guiController.activeAudioTrack
+        onPositionChanged: SubtitlesController.SetPlaybackPosition(position)
         audioOutput: AudioOutput {
             id: audioOutputID
 
@@ -25,6 +28,26 @@ Item {
         id: videoOutputID
 
         anchors.fill: parent
+    }
+
+    Text {
+        id: subtitleTextID
+
+        z: 2
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: controlsID.top
+        anchors.bottomMargin: 12
+
+        width: parent.width * 0.85
+
+        text: SubtitlesController.currentSubtitleText
+        color: "white"
+        style: Text.Outline
+        styleColor: "black"
+        font.pixelSize: 22
+        horizontalAlignment: Text.AlignHCenter
+        wrapMode: Text.Wrap
+        visible: text.length > 0
     }
 
     Keys.onSpacePressed: videoID.playbackState === MediaPlayer.PlayingState ? videoID.pause() : videoID.play()
@@ -43,7 +66,7 @@ Item {
 
     Connections {
         target: guiController
-        function onReadyToPlayVideo() {
+        function onVideoFileUpdated() {
             videoID.source = guiController.videoFile
             if (videoID.playbackState !== MediaPlayer.PlayingState)
                 videoID.play()
@@ -165,6 +188,17 @@ Item {
 
                     text: "📂"
                     onClicked: fileDialogID.open()
+                }
+
+                ComboBox {
+                    id: subtitleTrackID
+
+                    Layout.preferredWidth: 180
+
+                    model: SubtitlesController.subtitleTracks
+                    currentIndex: SubtitlesController.activeSubtitleTrack
+                    visible: count > 0
+                    onActivated: index => SubtitlesController.activeSubtitleTrack = index
                 }
 
                 Label {
