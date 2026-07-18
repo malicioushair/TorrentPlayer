@@ -89,12 +89,7 @@ struct SubdlProvider::Impl
 	{
 		Cancel();
 		const auto requestGeneration = ++generation;
-		const auto apiKey = userData.value(SUBDL_API_KEY).toString().trimmed();
-		if (apiKey.isEmpty())
-		{
-			completion({ ProviderRequestStatus::Failed, SubtitleProviderId::Subdl, {}, QStringLiteral("SubDL is not configured.") });
-			return;
-		}
+		const auto apiKey = userData.value(SUBDL_API_KEY).isNull() ? DEFAULT_SUBDL_API_KEY : userData.value(SUBDL_API_KEY).toString().trimmed();
 
 		QUrlQuery query;
 		query.addQueryItem(QStringLiteral("api_key"), apiKey);
@@ -225,7 +220,7 @@ void SubdlProvider::SetUserData(const QVariantMap & userData)
 
 bool SubdlProvider::IsConfigured() const
 {
-	return !m_impl->userData.value(SUBDL_API_KEY).toString().trimmed().isEmpty();
+	return !m_impl->userData.value(SUBDL_API_KEY).toString().trimmed().isEmpty() || !QStringLiteral(DEFAULT_SUBDL_API_KEY).isEmpty();
 }
 
 void SubdlProvider::Request(const SubtitleRequestContext & context, Completion completion)
