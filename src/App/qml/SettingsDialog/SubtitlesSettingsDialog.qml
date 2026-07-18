@@ -144,16 +144,6 @@ Dialog {
 
             ColumnLayout {
                 TextField {
-                    id: openSubtitlesApiKeyFieldID
-
-                    Layout.fillWidth: true
-
-                    text: rootID.userData.openSubtitlesApiKey
-                    placeholderText: qsTr("OpenSubtitles API key")
-                    onEditingFinished: rootID.userData.openSubtitlesApiKey = text
-                }
-
-                TextField {
                     id: openSubtitlesUsernameFieldID
 
                     Layout.fillWidth: true
@@ -184,7 +174,6 @@ Dialog {
                     Button {
                         text: qsTr("Apply")
                         onClicked: {
-                            rootID.userData.openSubtitlesApiKey = openSubtitlesApiKeyFieldID.text
                             rootID.userData.openSubtitlesUsername = openSubtitlesUsernameFieldID.text
                             rootID.userData.openSubtitlesPassword = openSubtitlesPasswordFieldID.text
 

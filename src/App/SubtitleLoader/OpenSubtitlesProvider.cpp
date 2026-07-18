@@ -20,7 +20,6 @@
 namespace TorrentPlayer::Subtitles {
 namespace {
 
-constexpr auto API_KEY = "openSubtitlesApiKey";
 constexpr auto USERNAME = "openSubtitlesUsername";
 constexpr auto PASSWORD = "openSubtitlesPassword";
 constexpr auto RECENT_IMDB_ID = "recentImdbId";
@@ -166,7 +165,7 @@ struct OpenSubtitlesProvider::Impl
 		ISubtitleProvider::Completion completion,
 		quint64 requestGeneration)
 	{
-		const auto apiKey = userData.value(API_KEY).toString().trimmed();
+		const auto apiKey = userData.value(OPEN_SUBTITLES_API_KEY).toString().trimmed();
 		QNetworkRequest request(QUrl(QStringLiteral("https://api.opensubtitles.com/api/v1/login")));
 		request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
 		ApplyHeaders(request, apiKey);
@@ -234,7 +233,7 @@ struct OpenSubtitlesProvider::Impl
 			return;
 		}
 
-		const auto apiKey = userData.value(API_KEY).toString().trimmed();
+		const auto apiKey = userData.value(OPEN_SUBTITLES_API_KEY).toString().trimmed();
 		QNetworkRequest request(BuildSearchUrl(context, modes[modeIndex]));
 		ApplyHeaders(request, apiKey, token);
 		auto * reply = networkManager.get(request);
@@ -300,7 +299,7 @@ struct OpenSubtitlesProvider::Impl
 
 	void RequestDownloadLink(int fileId, ISubtitleProvider::Completion completion, quint64 requestGeneration)
 	{
-		const auto apiKey = userData.value(API_KEY).toString().trimmed();
+		const auto apiKey = userData.value(OPEN_SUBTITLES_API_KEY).toString().trimmed();
 		QNetworkRequest request(QUrl(QStringLiteral("https://api.opensubtitles.com/api/v1/download")));
 		request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
 		ApplyHeaders(request, apiKey, token);
@@ -410,8 +409,8 @@ void OpenSubtitlesProvider::SetUserData(const QVariantMap & userData)
 
 bool OpenSubtitlesProvider::IsConfigured() const
 {
-	// API_KEY is required for open subtitles
-	return !m_impl->userData.value(API_KEY).toString().trimmed().isEmpty();
+	// OPEN_SUBTITLES_API_KEY is required for open subtitles
+	return !QStringLiteral(OPEN_SUBTITLES_API_KEY).isEmpty();
 }
 
 void OpenSubtitlesProvider::Request(const SubtitleRequestContext & context, Completion completion)

@@ -36,6 +36,11 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 list(REMOVE_ITEM SOURCES ${SUBTITLE_SOURCES})
 
 add_library(TorrentPlayerSubtitles STATIC ${SUBTITLE_SOURCES})
+target_compile_definitions(TorrentPlayerSubtitles
+PRIVATE
+    DEFAULT_SUBDL_API_KEY="${DEFAULT_SUBDL_API_KEY}"
+    OPEN_SUBTITLES_API_KEY="${OPEN_SUBTITLES_API_KEY}"
+)
 target_include_directories(TorrentPlayerSubtitles PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(TorrentPlayerSubtitles PUBLIC
     Qt6::Core
