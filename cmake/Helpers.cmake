@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 function(AbsToRelPath OUT_VAR BASE_DIR)
     set(result)
     foreach(file IN LISTS ARGN)

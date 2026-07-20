@@ -14,9 +14,11 @@ execute_process(
           --build=missing
           --output-folder=${CMAKE_BINARY_DIR}
           -s build_type=${CMAKE_BUILD_TYPE}
+  COMMAND_ERROR_IS_FATAL ANY
 )
 
 include(src/TorrentDownloader/TorrentDownloader.cmake)
+include(src/SubtitleLoader/SubtitleLoader.cmake)
 include(src/App/App.cmake)
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)

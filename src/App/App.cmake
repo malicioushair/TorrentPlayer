@@ -1,63 +1,46 @@
 include(cmake/Helpers.cmake)
+include(cmake/AddTarget.cmake)
 
 set(APP_MAJOR_VERSION 0)
 set(APP_MINOR_VERSION 1)
 set(APP_PATCH_VERSION 0)
 
-find_package(GLog REQUIRED)
-find_package(
-Qt6
-COMPONENTS
-    Core
-    Gui
-    Quick
-    QuickLayouts
-    QuickControls2
-    Multimedia
-    Network
-REQUIRED)
-find_package(keychain CONFIG REQUIRED)
-find_package(ZLIB REQUIRED)
+AddTarget(
+    TARGET_NAME ${PROJECT_NAME}
+    TYPE QT_EXECUTABLE
 
-qt_standard_project_setup()
+    PACKAGE Qt6
+        COMPONENTS
+            Core
+            Gui
+            Quick
+            QuickLayouts
+            QuickControls2
+            Multimedia
+            Network
+    PACKAGE glog
+    PACKAGE keychain
 
-if(QT_KNOWN_POLICY_QTP0004)
-    qt_policy(SET QTP0004 NEW)
-endif()
+    DEPENDENCIES
+        Qt6::Multimedia
+        Qt6::Quick
+        Qt6::QuickLayouts
+        Qt6::QuickControls2
+        TorrentDownloader
+        glog::glog
+        keychain::keychain
+        TorrentPlayerSubtitles
 
-file(GLOB_RECURSE SUBTITLE_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_LIST_DIR}/SubtitleLoader/*.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/SubtitleLoader/*.h"
-)
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_LIST_DIR}/*.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/*.h"
-)
-list(REMOVE_ITEM SOURCES ${SUBTITLE_SOURCES})
-
-add_library(TorrentPlayerSubtitles STATIC ${SUBTITLE_SOURCES})
-target_compile_definitions(TorrentPlayerSubtitles
-PRIVATE
-    DEFAULT_SUBDL_API_KEY="${DEFAULT_SUBDL_API_KEY}"
-    OPEN_SUBTITLES_API_KEY="${OPEN_SUBTITLES_API_KEY}"
-)
-target_include_directories(TorrentPlayerSubtitles PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(TorrentPlayerSubtitles PUBLIC
-    Qt6::Core
-    Qt6::Network
-    ZLIB::ZLIB
+    ADDITIONAL_QML_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/App/Controllers/SubtitlesController/SubtitlesController.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/App/Controllers/SubtitlesController/SubtitlesController.cpp
 )
 
-qt_add_executable(${PROJECT_NAME} ${SOURCES} ${QT_RESOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE
 # @TODO: make it more qt-way. Creating a path App/TorrentPlayer should help
     ${CMAKE_CURRENT_LIST_DIR}/Controllers/SubtitlesController
 )
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE NDEBUG=1)
-else()
-    target_compile_definitions(${PROJECT_NAME} PRIVATE MAIN_QML="${CMAKE_CURRENT_LIST_DIR}/qml/main.qml")
-endif()
+
 if (APPLE)
     configure_file(${CMAKE_SOURCE_DIR}/resources/mac/Info.plist.in ${CMAKE_BINARY_DIR}/Info.plist @ONLY)
     set(APP_ICON resources/mac/TorrentPlayer.icns)
@@ -72,52 +55,14 @@ if (APPLE)
     target_sources(${PROJECT_NAME} PRIVATE ${APP_ICON})
 endif()
 
-qt6_import_qml_plugins(${PROJECT_NAME})
+AddTarget(
+    TARGET_NAME SubtitleLoaderTests
+    TYPE UNIT_TESTS
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    Qt6::Multimedia
-    Qt6::Quick
-    Qt6::QuickLayouts
-    Qt6::QuickControls2
-    TorrentDownloader
-    glog::glog
-    keychain::keychain
-    TorrentPlayerSubtitles
-)
+    PACKAGE GTest
 
-file(GLOB_RECURSE ABS_QML CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_LIST_DIR}/qml/*.qml"
-)
-
-AbsToRelPath(REL_QML "${CMAKE_CURRENT_SOURCE_DIR}" ${ABS_QML})
-
-set(QT_QML_GENERATE_QMLLS_INI ON)
-
-qt_add_qml_module(${PROJECT_NAME}
-    URI ${PROJECT_NAME}
-    VERSION 1.0
-    RESOURCE_PREFIX "/qt/qml"
-    QML_FILES
-        ${REL_QML}
-    SOURCES
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/App/Controllers/SubtitlesController/SubtitlesController.h
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/App/Controllers/SubtitlesController/SubtitlesController.cpp
-)
-
-if (BUILD_TESTING)
-    find_package(GTest CONFIG REQUIRED)
-    include(GoogleTest)
-
-    add_executable(SubtitleLoaderTests ${CMAKE_SOURCE_DIR}/tests/SubtitleLoaderTests.cpp)
-    target_link_libraries(SubtitleLoaderTests PRIVATE
+    DEPENDENCIES
         GTest::gtest_main
         Qt6::Core
         TorrentPlayerSubtitles
-    )
-    gtest_discover_tests(SubtitleLoaderTests)
-endif()
-
-target_link_libraries(TorrentDownloader
-    LibtorrentRasterbar::torrent-rasterbar
-    glog::glog
 )

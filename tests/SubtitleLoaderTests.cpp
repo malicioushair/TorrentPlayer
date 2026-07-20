@@ -5,11 +5,11 @@
 #include <QString>
 #include <QTemporaryDir>
 
-#include "App/SubtitleLoader/SubtitleCache.h"
-#include "App/SubtitleLoader/SubtitleContentProcessor.h"
-#include "App/SubtitleLoader/SubtitleParser.h"
-#include "App/SubtitleLoader/SubtitlePlaybackModel.h"
-#include "App/SubtitleLoader/SubtitleTypes.h"
+#include "SubtitleLoader/SubtitleCache.h"
+#include "SubtitleLoader/SubtitleContentProcessor.h"
+#include "SubtitleLoader/SubtitleParser.h"
+#include "SubtitleLoader/SubtitlePlaybackModel.h"
+#include "SubtitleLoader/SubtitleTypes.h"
 
 using namespace TorrentPlayer::Subtitles;
 
