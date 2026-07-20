@@ -50,6 +50,31 @@ Item {
         visible: text.length > 0
     }
 
+    Text {
+        id: subtitleOffsetTextID
+
+        z: 2
+        anchors {
+            top: parent.top
+            right: parent.right
+            margins: 16
+        }
+
+        text: `${SubtitlesController.subtitleOffset > 0 ? "+" : ""}${SubtitlesController.subtitleOffset}ms`
+        color: "white"
+        style: Text.Outline
+        styleColor: "black"
+        font.pixelSize: 22
+        visible: false
+    }
+
+    Timer {
+        id: subtitleOffsetVisibilityTimerID
+
+        interval: 1000
+        onTriggered: subtitleOffsetTextID.visible = false
+    }
+
     Keys.onSpacePressed: videoID.playbackState === MediaPlayer.PlayingState ? videoID.pause() : videoID.play()
     Keys.onLeftPressed: videoID.position = videoID.position - 5000
     Keys.onRightPressed: videoID.position = videoID.position + 5000
@@ -58,9 +83,26 @@ Item {
             mainWindowID.visibility = Window.Windowed
     }
     Keys.onPressed: (event)=> {
-        if (event.key == Qt.Key_F) {
-            mainWindowID.visibility = mainWindowID.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen
-            event.accepted = true;
+        switch(event.key) {
+            case Qt.Key_F: {
+                mainWindowID.visibility = mainWindowID.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen
+                event.accepted = true;
+                break;
+            }
+            case Qt.Key_G: {
+                SubtitlesController.DecreaseOffset()
+                subtitleOffsetTextID.visible = true
+                subtitleOffsetVisibilityTimerID.restart()
+                event.accepted = true;
+                break;
+            }
+            case Qt.Key_H: {
+                SubtitlesController.IncreaseOffset()
+                subtitleOffsetTextID.visible = true
+                subtitleOffsetVisibilityTimerID.restart()
+                event.accepted = true;
+                break;
+            }
         }
     }
 
