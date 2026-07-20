@@ -6,7 +6,7 @@
 #include <QUrl>
 
 #include "App/Controllers/UserDataStorage/UserDataStorage.h"
-#include "App/SubtitleLoader/SubtitleLoader.h"
+#include "SubtitleLoader/SubtitleLoader.h"
 
 namespace {
 constexpr auto RECENT_IMDB_ID = "recentImdbId";

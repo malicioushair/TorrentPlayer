@@ -1,13 +1,13 @@
-find_package(LibtorrentRasterbar REQUIRED)
-find_package(GLog REQUIRED)
+include(cmake/AddTarget.cmake)
 
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_LIST_DIR}/*.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/*.h"
-)
-add_library(TorrentDownloader ${SOURCES})
+AddTarget(
+    TARGET_NAME TorrentDownloader
+    TYPE SHARED_LIB
 
-target_link_libraries(TorrentDownloader
-    LibtorrentRasterbar::torrent-rasterbar
-    glog::glog
+    PACKAGE LibtorrentRasterbar
+    PACKAGE glog
+
+    DEPENDENCIES
+        LibtorrentRasterbar::torrent-rasterbar
+        glog::glog
 )
