@@ -10,6 +10,7 @@
 
 namespace {
 constexpr auto RECENT_IMDB_ID = "recentImdbId";
+constexpr auto SUBTITLE_OFFSET_STEP_MS = 500;
 }
 
 struct SubtitlesController::Impl
@@ -31,7 +32,14 @@ struct SubtitlesController::Impl
 	QSettings settings;
 	QString imdbId;
 	std::string videoFile {};
+	qint64 playbackPositionMs {};
+	int subtitleOffsetMs {};
 	SubtitleLoader subtitleLoader;
+
+	void UpdatePlaybackPosition()
+	{
+		subtitleLoader.SetPlaybackPosition(playbackPositionMs - subtitleOffsetMs);
+	}
 };
 
 SubtitlesController::SubtitlesController(QObject * parent)
@@ -44,6 +52,13 @@ SubtitlesController::~SubtitlesController() = default;
 
 void SubtitlesController::SetVideoFile(const std::string & videoFile)
 {
+	if (m_impl->videoFile != videoFile)
+	{
+		m_impl->playbackPositionMs = 0;
+		if (m_impl->subtitleOffsetMs != 0)
+			emit subtitleOffsetChanged();
+	}
+
 	m_impl->videoFile = videoFile;
 	m_impl->subtitleLoader.SetVideoFile(QString::fromStdString(videoFile));
 }
@@ -55,7 +70,22 @@ void SubtitlesController::DownloadSubtitles(const QString & language)
 
 void SubtitlesController::SetPlaybackPosition(qint64 positionMs)
 {
-	m_impl->subtitleLoader.SetPlaybackPosition(positionMs);
+	m_impl->playbackPositionMs = positionMs;
+	m_impl->UpdatePlaybackPosition();
+}
+
+void SubtitlesController::IncreaseOffset()
+{
+	m_impl->subtitleOffsetMs += SUBTITLE_OFFSET_STEP_MS;
+	m_impl->UpdatePlaybackPosition();
+	emit subtitleOffsetChanged();
+}
+
+void SubtitlesController::DecreaseOffset()
+{
+	m_impl->subtitleOffsetMs -= SUBTITLE_OFFSET_STEP_MS;
+	m_impl->UpdatePlaybackPosition();
+	emit subtitleOffsetChanged();
 }
 
 int SubtitlesController::GetActiveSubtitleTrack() const
@@ -76,6 +106,11 @@ QStringList SubtitlesController::GetSubtitleTracks() const
 QString SubtitlesController::GetCurrentSubtitleText() const
 {
 	return m_impl->subtitleLoader.GetCurrentSubtitleText();
+}
+
+qint64 SubtitlesController::GetSubtitleOffset() const
+{
+	return m_impl->subtitleOffsetMs;
 }
 
 QString SubtitlesController::GetImdbId() const
