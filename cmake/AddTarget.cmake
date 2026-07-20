@@ -126,10 +126,10 @@ macro(AddTarget)
         "${CMAKE_CURRENT_LIST_DIR}/*.h"
     )
 
-    if(ARG_TYPE STREQUAL "SHARED_LIB")
+    if(ARG_TYPE STREQUAL "STATIC_LIB")
         add_library(
             ${ARG_TARGET_NAME}
-            SHARED
+            STATIC
             ${_add_target_sources}
         )
     elseif(ARG_TYPE STREQUAL "QT_EXECUTABLE")

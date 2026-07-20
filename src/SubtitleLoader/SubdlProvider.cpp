@@ -18,7 +18,7 @@ namespace TorrentPlayer::Subtitles {
 namespace {
 
 constexpr auto SUBDL_API_KEY = "subDlApiKey";
-constexpr qsizetype MAX_NETWORK_PAYLOAD_BYTES = 20 * 1024 * 1024;
+constexpr auto MAX_NETWORK_PAYLOAD_BYTES = 20 * 1024 * 1024;
 constexpr auto NETWORK_TIMEOUT_MS = 15000;
 
 QNetworkRequest MakeRequest(const QUrl & url)

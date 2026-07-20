@@ -31,7 +31,12 @@ TEST(SubtitleParserTest, ParsesSrtAndSelectsCuesForPlayback)
 	SubtitleParser parser;
 	QString errorDescription;
 	auto document = parser.Parse(payload, &errorDescription);
-	ASSERT_TRUE(document.has_value()) << errorDescription.toStdString();
+	if (!document)
+	{
+		ADD_FAILURE() << errorDescription.toStdString();
+		return;
+	}
+
 	ASSERT_EQ(document->cues.size(), 2);
 
 	SubtitlePlaybackModel playbackModel;
@@ -62,7 +67,12 @@ TEST(SubtitleContentProcessorTest, ExtractsAndParsesZipPayload)
 	ASSERT_TRUE(wasArchive);
 	ASSERT_EQ(extracted.size(), 1);
 	const auto processed = processor.Process(extracted, {}, errorDescription);
-	ASSERT_TRUE(processed.has_value()) << errorDescription.toStdString();
+	if (!processed)
+	{
+		ADD_FAILURE() << errorDescription.toStdString();
+		return;
+	}
+
 	EXPECT_EQ(processed->cachePayload.format, SubtitleFormat::Srt);
 	ASSERT_FALSE(processed->document.cues.empty());
 	EXPECT_EQ(processed->document.cues.front().text, QStringLiteral("Archive cue"));
@@ -110,7 +120,12 @@ TEST(SubtitleCacheTest, StoresArchiveEntriesAndFindsTheCurrentEpisode)
 	metadata.episode = 8;
 	SubtitleContentProcessor processor;
 	const auto selected = processor.Process(payloads, metadata, errorDescription);
-	ASSERT_TRUE(selected.has_value()) << errorDescription.toStdString();
+	if (!selected)
+	{
+		ADD_FAILURE() << errorDescription.toStdString();
+		return;
+	}
+
 	ASSERT_FALSE(selected->document.cues.empty());
 	EXPECT_EQ(selected->document.cues.front().text, QStringLiteral("Episode 8"));
 
@@ -133,7 +148,12 @@ TEST(SubtitleCacheTest, StoresArchiveEntriesAndFindsTheCurrentEpisode)
 	EXPECT_EQ(cached.front().fileName, QStringLiteral("Black.Sun.S01E08.srt"));
 
 	const auto processed = processor.Process(cached, metadata, errorDescription);
-	ASSERT_TRUE(processed.has_value()) << errorDescription.toStdString();
+	if (!processed)
+	{
+		ADD_FAILURE() << errorDescription.toStdString();
+		return;
+	}
+
 	ASSERT_FALSE(processed->document.cues.empty());
 	EXPECT_EQ(processed->document.cues.front().text, QStringLiteral("Episode 8"));
 }

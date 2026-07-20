@@ -50,6 +50,7 @@ jobs:
           target: desktop
           arch: clang_64
           cache: true
+          modules: qtmultimedia
 
       - name: Configure Conan profile
         run: conan profile detect --force
@@ -114,6 +115,7 @@ jobs:
           target: desktop
           arch: clang_64
           cache: true
+          modules: qtmultimedia
 
       - name: Configure Conan profile
         run: conan profile detect --force
@@ -181,6 +183,7 @@ jobs:
           target: desktop
           arch: linux_gcc_64
           cache: true
+          modules: qtmultimedia
 
       - name: Configure Conan profile
         run: conan profile detect --force
@@ -237,6 +240,7 @@ jobs:
           target: desktop
           arch: win64_msvc2022_64
           cache: true
+          modules: qtmultimedia
 
       - name: Configure Conan profile
         run: conan profile detect --force

@@ -1,7 +1,7 @@
 #include "OpenSubtitlesProvider.h"
 
+#include <array>
 #include <utility>
-#include <vector>
 
 #include <QFileInfo>
 #include <QJsonArray>
@@ -17,6 +17,8 @@
 #include <QUrl>
 #include <QUrlQuery>
 
+#include "glog/logging.h"
+
 namespace TorrentPlayer::Subtitles {
 namespace {
 
@@ -24,7 +26,7 @@ constexpr auto USERNAME = "openSubtitlesUsername";
 constexpr auto PASSWORD = "openSubtitlesPassword";
 constexpr auto RECENT_IMDB_ID = "recentImdbId";
 constexpr auto USER_AGENT = "TorrentPlayer v0.1.0";
-constexpr qsizetype MAX_NETWORK_PAYLOAD_BYTES = 20 * 1024 * 1024;
+constexpr auto MAX_NETWORK_PAYLOAD_BYTES = 20 * 1024 * 1024;
 constexpr auto NETWORK_TIMEOUT_MS = 15000;
 
 enum class SearchMode
@@ -32,6 +34,12 @@ enum class SearchMode
 	Imdb,
 	MovieHash,
 	FileName,
+};
+
+struct SearchModes
+{
+	std::array<SearchMode, 3> values {};
+	size_t count {};
 };
 
 void ApplyHeaders(QNetworkRequest & request, const QString & apiKey, const QString & token = {})
@@ -75,15 +83,15 @@ QString HttpErrorDescription(const QNetworkReply & reply)
 	return reply.errorString();
 }
 
-std::vector<SearchMode> BuildSearchModes(const VideoSearchMetadata & metadata)
+SearchModes BuildSearchModes(const VideoSearchMetadata & metadata)
 {
 	QSettings settings;
-	std::vector<SearchMode> result;
+	SearchModes result;
 	if (!metadata.imdbId.isEmpty() || settings.value(RECENT_IMDB_ID).isValid())
-		result.push_back(SearchMode::Imdb);
+		result.values[result.count++] = SearchMode::Imdb;
 	if (!metadata.movieHash.isEmpty() && metadata.movieFileSize > 0)
-		result.push_back(SearchMode::MovieHash);
-	result.push_back(SearchMode::FileName);
+		result.values[result.count++] = SearchMode::MovieHash;
+	result.values[result.count++] = SearchMode::FileName;
 	return result;
 }
 
@@ -128,6 +136,28 @@ struct OpenSubtitlesProvider::Impl
 	QVariantMap userData;
 	QString token;
 	quint64 generation {};
+
+	void CompleteWithUnexpectedError(
+		const ISubtitleProvider::Completion & completion,
+		quint64 requestGeneration) const noexcept
+	{
+		if (requestGeneration != generation)
+			return;
+
+		try
+		{
+			completion({
+				ProviderRequestStatus::Failed,
+				SubtitleProviderId::OpenSubtitles,
+				{},
+				QStringLiteral("Unexpected error during OpenSubtitles request."),
+			});
+		}
+		catch (...)
+		{
+			LOG(WARNING) << "The OpenSubtitles completion handler threw an exception.";
+		}
+	}
 
 	void Cancel()
 	{
@@ -175,7 +205,6 @@ struct OpenSubtitlesProvider::Impl
 		body.insert(QStringLiteral("password"), userData.value(PASSWORD).toString());
 
 		auto * reply = networkManager.post(request, QJsonDocument(body).toJson(QJsonDocument::Compact));
-		qDebug() << "FOO: " << request.url();
 		activeReplies.insert(reply);
 		QObject::connect(reply, &QNetworkReply::finished, &networkManager, [this, reply, context, completion, requestGeneration] {
 			activeReplies.remove(reply);
@@ -221,80 +250,92 @@ struct OpenSubtitlesProvider::Impl
 	void Search(
 		const SubtitleRequestContext & context,
 		ISubtitleProvider::Completion completion,
-		const std::vector<SearchMode> & modes,
+		SearchModes modes,
 		size_t modeIndex,
 		int retryAttempt,
 		quint64 requestGeneration)
 	{
 		if (requestGeneration != generation)
 			return;
-		if (modeIndex >= modes.size())
+		if (modeIndex >= modes.count)
 		{
 			completion({ ProviderRequestStatus::NotFound, SubtitleProviderId::OpenSubtitles, {}, QStringLiteral("OpenSubtitles found no matching subtitles.") });
 			return;
 		}
 
 		const auto apiKey = OPEN_SUBTITLES_API_KEY;
-		QNetworkRequest request(BuildSearchUrl(context, modes[modeIndex]));
+		QNetworkRequest request(BuildSearchUrl(context, modes.values[modeIndex]));
 		ApplyHeaders(request, apiKey, token);
 		auto * reply = networkManager.get(request);
 		activeReplies.insert(reply);
-		QObject::connect(reply, &QNetworkReply::finished, &networkManager, [this, reply, context, completion, modes, modeIndex, retryAttempt, requestGeneration] {
-			activeReplies.remove(reply);
-			reply->deleteLater();
-			if (requestGeneration != generation)
-				return;
-
-			if (reply->error() != QNetworkReply::NoError)
+		QObject::connect(reply, &QNetworkReply::finished, &networkManager, [this, reply, context, completion, modes, modeIndex, retryAttempt, requestGeneration]() noexcept {
+			try
 			{
-				const auto status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-				if ((status == 429 || status == 502 || status == 503) && retryAttempt < 2)
+				activeReplies.remove(reply);
+				reply->deleteLater();
+				if (requestGeneration != generation)
+					return;
+
+				if (reply->error() != QNetworkReply::NoError)
 				{
-					const auto delayMs = 500 * (1 << retryAttempt);
-					QTimer::singleShot(delayMs, &networkManager, [this, context, completion, modes, modeIndex, retryAttempt, requestGeneration] {
-						Search(context, completion, modes, modeIndex, retryAttempt + 1, requestGeneration);
-					});
+					const auto status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+					if ((status == 429 || status == 502 || status == 503) && retryAttempt < 2)
+					{
+						const auto delayMs = 500 * (1 << retryAttempt);
+						QTimer::singleShot(delayMs, &networkManager, [this, context, completion, modes, modeIndex, retryAttempt, requestGeneration]() noexcept {
+							try
+							{
+								Search(context, completion, modes, modeIndex, retryAttempt + 1, requestGeneration);
+							}
+							catch (...)
+							{
+								CompleteWithUnexpectedError(completion, requestGeneration);
+							}
+						});
+						return;
+					}
+
+					completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, HttpErrorDescription(*reply) });
 					return;
 				}
 
-				completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, HttpErrorDescription(*reply) });
-				return;
-			}
+				QByteArray response;
+				QString errorDescription;
+				if (!ReadLimitedReply(*reply, &response, &errorDescription))
+				{
+					completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, errorDescription });
+					return;
+				}
 
-			QByteArray response;
-			QString errorDescription;
-			if (!ReadLimitedReply(*reply, &response, &errorDescription))
+				QJsonParseError parseError;
+				const auto document = QJsonDocument::fromJson(response, &parseError);
+				if (parseError.error != QJsonParseError::NoError || !document.isObject())
+				{
+					completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, QStringLiteral("OpenSubtitles returned invalid JSON.") });
+					return;
+				}
+
+				const auto data = document.object().value(QStringLiteral("data")).toArray();
+				if (data.empty())
+				{
+					Search(context, completion, modes, modeIndex + 1, 0, requestGeneration);
+					return;
+				}
+
+				const auto files = data.first().toObject().value(QStringLiteral("attributes")).toObject().value(QStringLiteral("files")).toArray();
+				const auto fileId = files.empty() ? 0 : files.first().toObject().value(QStringLiteral("file_id")).toInt();
+				if (fileId <= 0)
+				{
+					Search(context, completion, modes, modeIndex + 1, 0, requestGeneration);
+					return;
+				}
+
+				RequestDownloadLink(fileId, completion, requestGeneration);
+			}
+			catch (...)
 			{
-				completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, errorDescription });
-				return;
+				CompleteWithUnexpectedError(completion, requestGeneration);
 			}
-
-			QJsonParseError parseError;
-			const auto document = QJsonDocument::fromJson(response, &parseError);
-			if (parseError.error != QJsonParseError::NoError || !document.isObject())
-			{
-				completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, QStringLiteral("OpenSubtitles returned invalid JSON.") });
-				return;
-			}
-
-			const auto data = document.object().value(QStringLiteral("data")).toArray();
-			if (data.empty())
-			{
-				Search(context, completion, modes, modeIndex + 1, 0, requestGeneration);
-				return;
-			}
-
-			const auto files = data.first().toObject()
-				.value(QStringLiteral("attributes")).toObject()
-				.value(QStringLiteral("files")).toArray();
-			const auto fileId = files.empty() ? 0 : files.first().toObject().value(QStringLiteral("file_id")).toInt();
-			if (fileId <= 0)
-			{
-				Search(context, completion, modes, modeIndex + 1, 0, requestGeneration);
-				return;
-			}
-
-			RequestDownloadLink(fileId, completion, requestGeneration);
 		});
 	}
 
@@ -310,38 +351,51 @@ struct OpenSubtitlesProvider::Impl
 		auto * reply = networkManager.post(request, QJsonDocument(body).toJson(QJsonDocument::Compact));
 		activeReplies.insert(reply);
 		QObject::connect(reply, &QNetworkReply::finished, &networkManager, [this, reply, completion, requestGeneration] {
-			activeReplies.remove(reply);
-			reply->deleteLater();
-			if (requestGeneration != generation)
-				return;
-
-			if (reply->error() != QNetworkReply::NoError)
+			try
 			{
-				completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, HttpErrorDescription(*reply) });
-				return;
-			}
+				activeReplies.remove(reply);
+				reply->deleteLater();
+				if (requestGeneration != generation)
+					return;
 
-			QByteArray response;
-			QString errorDescription;
-			if (!ReadLimitedReply(*reply, &response, &errorDescription))
+				if (reply->error() != QNetworkReply::NoError)
+				{
+					completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, HttpErrorDescription(*reply) });
+					return;
+				}
+
+				QByteArray response;
+				QString errorDescription;
+				if (!ReadLimitedReply(*reply, &response, &errorDescription))
+				{
+					completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, errorDescription });
+					return;
+				}
+
+				QJsonParseError parseError;
+				const auto document = QJsonDocument::fromJson(response, &parseError);
+				const QUrl link(document.object().value(QStringLiteral("link")).toString());
+				if (parseError.error != QJsonParseError::NoError
+					|| !link.isValid()
+					|| link.isEmpty()
+					|| link.scheme() != QStringLiteral("https"))
+				{
+					completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, QStringLiteral("OpenSubtitles returned an invalid download link.") });
+					return;
+				}
+
+				Download(link, completion, requestGeneration);
+			}
+			catch (...)
 			{
-				completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, errorDescription });
-				return;
+				if (requestGeneration == generation)
+					completion({
+						ProviderRequestStatus::Failed,
+						SubtitleProviderId::OpenSubtitles,
+						{},
+						QStringLiteral("Unexpected error during OpenSubtitles request."),
+					});
 			}
-
-			QJsonParseError parseError;
-			const auto document = QJsonDocument::fromJson(response, &parseError);
-			const QUrl link(document.object().value(QStringLiteral("link")).toString());
-			if (parseError.error != QJsonParseError::NoError
-				|| !link.isValid()
-				|| link.isEmpty()
-				|| link.scheme() != QStringLiteral("https"))
-			{
-				completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, QStringLiteral("OpenSubtitles returned an invalid download link.") });
-				return;
-			}
-
-			Download(link, completion, requestGeneration);
 		});
 	}
 
@@ -353,35 +407,48 @@ struct OpenSubtitlesProvider::Impl
 		auto * reply = networkManager.get(request);
 		activeReplies.insert(reply);
 		QObject::connect(reply, &QNetworkReply::finished, &networkManager, [this, reply, url, completion, requestGeneration] {
-			activeReplies.remove(reply);
-			reply->deleteLater();
-			if (requestGeneration != generation)
-				return;
-
-			if (reply->error() != QNetworkReply::NoError)
+			try
 			{
-				completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, reply->errorString() });
-				return;
-			}
+				activeReplies.remove(reply);
+				reply->deleteLater();
+				if (requestGeneration != generation)
+					return;
 
-			QByteArray content;
-			QString errorDescription;
-			if (!ReadLimitedReply(*reply, &content, &errorDescription))
+				if (reply->error() != QNetworkReply::NoError)
+				{
+					completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, reply->errorString() });
+					return;
+				}
+
+				QByteArray content;
+				QString errorDescription;
+				if (!ReadLimitedReply(*reply, &content, &errorDescription))
+				{
+					completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, errorDescription });
+					return;
+				}
+
+				auto fileName = QFileInfo(url.path()).fileName();
+				if (fileName.isEmpty())
+					fileName = QStringLiteral("opensubtitles-subtitle.srt");
+				SubtitlePayload payload {
+					SubtitleProviderId::OpenSubtitles,
+					fileName,
+					SubtitleFormatFromFileName(fileName),
+					std::move(content),
+				};
+				completion({ ProviderRequestStatus::Success, SubtitleProviderId::OpenSubtitles, std::move(payload), {} });
+			}
+			catch (...)
 			{
-				completion({ ProviderRequestStatus::Failed, SubtitleProviderId::OpenSubtitles, {}, errorDescription });
-				return;
+				if (requestGeneration == generation)
+					completion({
+						ProviderRequestStatus::Failed,
+						SubtitleProviderId::OpenSubtitles,
+						{},
+						QStringLiteral("Unexpected error during OpenSubtitles request."),
+					});
 			}
-
-			auto fileName = QFileInfo(url.path()).fileName();
-			if (fileName.isEmpty())
-				fileName = QStringLiteral("opensubtitles-subtitle.srt");
-			SubtitlePayload payload {
-				SubtitleProviderId::OpenSubtitles,
-				fileName,
-				SubtitleFormatFromFileName(fileName),
-				std::move(content),
-			};
-			completion({ ProviderRequestStatus::Success, SubtitleProviderId::OpenSubtitles, std::move(payload), {} });
 		});
 	}
 };
