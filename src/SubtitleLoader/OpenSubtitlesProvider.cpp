@@ -165,7 +165,7 @@ struct OpenSubtitlesProvider::Impl
 		ISubtitleProvider::Completion completion,
 		quint64 requestGeneration)
 	{
-		const auto apiKey = userData.value(OPEN_SUBTITLES_API_KEY).toString().trimmed();
+		const auto apiKey = OPEN_SUBTITLES_API_KEY;
 		QNetworkRequest request(QUrl(QStringLiteral("https://api.opensubtitles.com/api/v1/login")));
 		request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
 		ApplyHeaders(request, apiKey);
@@ -175,6 +175,7 @@ struct OpenSubtitlesProvider::Impl
 		body.insert(QStringLiteral("password"), userData.value(PASSWORD).toString());
 
 		auto * reply = networkManager.post(request, QJsonDocument(body).toJson(QJsonDocument::Compact));
+		qDebug() << "FOO: " << request.url();
 		activeReplies.insert(reply);
 		QObject::connect(reply, &QNetworkReply::finished, &networkManager, [this, reply, context, completion, requestGeneration] {
 			activeReplies.remove(reply);
@@ -233,7 +234,7 @@ struct OpenSubtitlesProvider::Impl
 			return;
 		}
 
-		const auto apiKey = userData.value(OPEN_SUBTITLES_API_KEY).toString().trimmed();
+		const auto apiKey = OPEN_SUBTITLES_API_KEY;
 		QNetworkRequest request(BuildSearchUrl(context, modes[modeIndex]));
 		ApplyHeaders(request, apiKey, token);
 		auto * reply = networkManager.get(request);
@@ -299,7 +300,7 @@ struct OpenSubtitlesProvider::Impl
 
 	void RequestDownloadLink(int fileId, ISubtitleProvider::Completion completion, quint64 requestGeneration)
 	{
-		const auto apiKey = userData.value(OPEN_SUBTITLES_API_KEY).toString().trimmed();
+		const auto apiKey = OPEN_SUBTITLES_API_KEY;
 		QNetworkRequest request(QUrl(QStringLiteral("https://api.opensubtitles.com/api/v1/download")));
 		request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
 		ApplyHeaders(request, apiKey, token);

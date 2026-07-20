@@ -89,7 +89,7 @@ struct SubdlProvider::Impl
 	{
 		Cancel();
 		const auto requestGeneration = ++generation;
-		const auto apiKey = userData.value(SUBDL_API_KEY).isNull() ? DEFAULT_SUBDL_API_KEY : userData.value(SUBDL_API_KEY).toString().trimmed();
+		const auto apiKey = userData.value(SUBDL_API_KEY).toString().isEmpty() ? DEFAULT_SUBDL_API_KEY : userData.value(SUBDL_API_KEY).toString().trimmed();
 
 		QUrlQuery query;
 		query.addQueryItem(QStringLiteral("api_key"), apiKey);
