@@ -2,7 +2,7 @@ include(cmake/AddTarget.cmake)
 
 AddTarget(
     TARGET_NAME TorrentDownloader
-    TYPE SHARED_LIB
+    TYPE STATIC_LIB
 
     PACKAGE LibtorrentRasterbar
     PACKAGE glog
