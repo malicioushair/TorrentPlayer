@@ -1,15 +1,18 @@
+#include <cstdlib>
+#include <exception>
+
+#include <QCommandLineOption>
+#include <QCommandLineParser>
 #include <QDir>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QStandardPaths>
-#include <exception>
-
 #include "Controllers/GuiController/GuiController.h"
 #include "TorrentDownloader/Notifier.h"
 
 #include "glog/logging.h"
 
-void InitLogging(const std::string & execName)
+void InitLogging(const char * execName)
 {
 	const auto logDir = QDir(QString::fromStdString(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).toStdString() + "/logs"));
 	if (!logDir.exists())
@@ -23,7 +26,7 @@ void InitLogging(const std::string & execName)
 
 	FLAGS_log_dir = logDir.absolutePath().toStdString();
 	FLAGS_alsologtostderr = true;
-	google::InitGoogleLogging(execName.data());
+	google::InitGoogleLogging(execName);
 }
 
 int main(int argc, char * argv[])
@@ -37,8 +40,19 @@ int main(int argc, char * argv[])
 		LOG(INFO) << "Starting TorrentPlayer application";
 
 		QGuiApplication app(argc, argv);
+		QCommandLineParser commandLineParser;
+		commandLineParser.addHelpOption();
+		const QCommandLineOption smokeTestOption(
+			QStringLiteral("smoke-test"),
+			QStringLiteral("Exit after application initialization."));
+		commandLineParser.addOption(smokeTestOption);
+		commandLineParser.process(app);
+
 		Notifier notifier;
 		TorrentPlayer::GuiController guiController(notifier);
+		if (commandLineParser.isSet(smokeTestOption))
+			return EXIT_SUCCESS;
+
 		return QGuiApplication::exec();
 	}
 	catch (const std::exception & ex)
@@ -49,4 +63,6 @@ int main(int argc, char * argv[])
 	{
 		LOG(ERROR) << "Unknown exception caught in main.";
 	}
+
+	return EXIT_FAILURE;
 }
