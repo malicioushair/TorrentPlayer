@@ -144,7 +144,7 @@ jobs:
         run: cmake --build "${{ env.BUILD_DIR }}" --parallel
 
       - name: Run tests
-        run: ctest --test-dir "${{ env.BUILD_DIR }}" --output-on-failure
+        run: "${{ env.BUILD_DIR }}/bin/SubtitleLoaderTests"
 
   linux-build:
     name: Linux Build & Test
@@ -209,7 +209,199 @@ jobs:
         run: cmake --build "${{ env.BUILD_DIR }}" --parallel
 
       - name: Run tests
-        run: ctest --test-dir "${{ env.BUILD_DIR }}" --output-on-failure
+        run: "${{ env.BUILD_DIR }}/bin/SubtitleLoaderTests"
+
+  valgrind:
+    name: Valgrind Memcheck
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    environment: default
+    env:
+      BUILD_DIR: build-valgrind
+      BUILD_TYPE: Debug
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install build and analysis tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libgl1-mesa-dev \
+            libxkbcommon-x11-0 \
+            ninja-build \
+            pkg-config \
+            valgrind
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Conan
+        run: pip install conan
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          cache: true
+          modules: qtmultimedia
+
+      - name: Configure Conan profile
+        run: conan profile detect --force
+
+      - name: Install Conan dependencies
+        run: |
+          conan install . \
+            -pr:b=default \
+            -of "${{ env.BUILD_DIR }}" \
+            -s build_type=${{ env.BUILD_TYPE }} \
+            --build=missing
+
+      - name: Configure CMake
+        run: |
+          cmake -G Ninja -S . -B "${{ env.BUILD_DIR }}" \
+            -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
+            -DCMAKE_PREFIX_PATH="${QT_ROOT_DIR};${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DQT_HOST_PATH="${QT_ROOT_DIR}" \
+            -DGLog_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DLibtorrentRasterbar_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}"
+
+      - name: Build app and tests
+        run: cmake --build "${{ env.BUILD_DIR }}" --target TorrentPlayer SubtitleLoaderTests --parallel
+
+      - name: Run tests under Valgrind
+        env:
+          QT_ENABLE_REGEXP_JIT: "0"
+        run: |
+          source "${{ env.BUILD_DIR }}/conanrun.sh"
+          valgrind \
+            --tool=memcheck \
+            --error-exitcode=1 \
+            --suppressions="${{ github.workspace }}/scripts/valgrind.supp" \
+            --leak-check=full \
+            --show-leak-kinds=definite,indirect \
+            --errors-for-leak-kinds=definite,indirect \
+            --track-origins=yes \
+            --num-callers=50 \
+            "${{ env.BUILD_DIR }}/bin/SubtitleLoaderTests"
+
+      - name: Run app under Valgrind
+        env:
+          QT_ENABLE_REGEXP_JIT: "0"
+          QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
+          XDG_RUNTIME_DIR: ${{ runner.temp }}/torrentplayer-runtime
+        run: |
+          source "${{ env.BUILD_DIR }}/conanrun.sh"
+          mkdir -p "${XDG_RUNTIME_DIR}"
+          chmod 700 "${XDG_RUNTIME_DIR}"
+          valgrind \
+            --tool=memcheck \
+            --error-exitcode=1 \
+            --suppressions="${{ github.workspace }}/scripts/valgrind.supp" \
+            --leak-check=full \
+            --show-leak-kinds=definite,indirect \
+            --errors-for-leak-kinds=definite,indirect \
+            --track-origins=yes \
+            --num-callers=50 \
+            "${{ env.BUILD_DIR }}/bin/TorrentPlayer" --smoke-test
+
+  sanitizers:
+    name: Address & Undefined Behavior Sanitizers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    environment: default
+    env:
+      BUILD_DIR: build-sanitizers
+      BUILD_TYPE: Debug
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libgl1-mesa-dev \
+            libxkbcommon-x11-0 \
+            ninja-build \
+            pkg-config
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Conan
+        run: pip install conan
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          cache: true
+          modules: qtmultimedia
+
+      - name: Configure Conan profile
+        run: conan profile detect --force
+
+      - name: Install Conan dependencies
+        run: |
+          conan install . \
+            -pr:b=default \
+            -of "${{ env.BUILD_DIR }}" \
+            -s build_type=${{ env.BUILD_TYPE }} \
+            --build=missing
+
+      - name: Configure CMake
+        run: |
+          cmake -G Ninja -S . -B "${{ env.BUILD_DIR }}" \
+            -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined" \
+            -DCMAKE_SHARED_LINKER_FLAGS="-fsanitize=address,undefined" \
+            -DCMAKE_PREFIX_PATH="${QT_ROOT_DIR};${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DQT_HOST_PATH="${QT_ROOT_DIR}" \
+            -DGLog_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DLibtorrentRasterbar_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}"
+
+      - name: Build app and tests
+        run: cmake --build "${{ env.BUILD_DIR }}" --target TorrentPlayer SubtitleLoaderTests --parallel
+
+      - name: Run tests with sanitizers
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          source "${{ env.BUILD_DIR }}/conanrun.sh"
+          "${{ env.BUILD_DIR }}/bin/SubtitleLoaderTests"
+
+      - name: Run app smoke test with sanitizers
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+          QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
+          XDG_RUNTIME_DIR: ${{ runner.temp }}/torrentplayer-runtime
+        run: |
+          source "${{ env.BUILD_DIR }}/conanrun.sh"
+          mkdir -p "${XDG_RUNTIME_DIR}"
+          chmod 700 "${XDG_RUNTIME_DIR}"
+          "${{ env.BUILD_DIR }}/bin/TorrentPlayer" --smoke-test
 
   windows-build:
     name: Windows Build & Test
@@ -266,4 +458,4 @@ jobs:
         run: cmake --build "${{ env.BUILD_DIR }}" --parallel
 
       - name: Run tests
-        run: ctest --test-dir "${{ env.BUILD_DIR }}" --output-on-failure
+        run: '& "${{ env.BUILD_DIR }}\bin\SubtitleLoaderTests.exe"'

@@ -1,0 +1,14 @@
+# glibc grows its dynamic-loader scope while Qt loads QML plugins. Qt keeps
+# those plugins loaded until process termination, leaving this loader-owned
+# allocation visible to Memcheck even after the application has shut down.
+#
+# Valgrind reports two malloc frames here: its interceptor, then rtld-malloc.
+{
+   glibc_dlopen_resize_scopes
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:malloc
+   fun:resize_scopes
+   ...
+}
