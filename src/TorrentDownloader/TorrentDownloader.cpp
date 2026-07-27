@@ -31,6 +31,13 @@ constexpr auto operator"" _MiB(unsigned long long x)
 	return x * 1024 * 1024;
 }
 
+constexpr std::string videoExtensions[] {
+	{ ".mkv" },
+	{ ".avi" },
+	{ ".mov" },
+	{ ".mp4" },
+};
+
 inline void PrioritizeFileTail(const lt::torrent_handle & torrentHandle, lt::file_index_t fileIndex, std::int64_t tailBytes)
 {
 	const auto torrentInfo = torrentHandle.torrent_file();
@@ -278,8 +285,17 @@ public:
 	{
 		if (!m_torrentHandle.is_valid() || !m_torrentHandle.torrent_file())
 			return {};
-
-		return (std::filesystem::path(m_torrentHandle.status().save_path) / m_torrentHandle.torrent_file()->files().begin_deprecated()->filename().to_string()).string();
+		const auto & files = m_torrentHandle.torrent_file()->files();
+		for (lt::file_index_t index : files.file_range())
+		{
+			if (files.pad_file_at(index))
+				continue;
+			const auto name = files.file_name(index);
+			for (const auto & ext : videoExtensions)
+				if (name.ends_with(ext))
+					return (std::filesystem::path(m_torrentHandle.status().save_path) / files.file_path(index)).string();
+		}
+		return {};
 	}
 
 private:
