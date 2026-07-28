@@ -31,11 +31,16 @@ constexpr auto operator"" _MiB(unsigned long long x)
 	return x * 1024 * 1024;
 }
 
+constexpr auto MKV = ".mkv";
+constexpr auto AVI = ".avi";
+constexpr auto MOV = ".mov";
+constexpr auto MP4 = ".mp4";
+
 constexpr std::string videoExtensions[] {
-	{ ".mkv" },
-	{ ".avi" },
-	{ ".mov" },
-	{ ".mp4" },
+	{ MKV },
+	{ AVI },
+	{ MOV },
+	{ MP4 },
 };
 
 inline void PrioritizeFileTail(const lt::torrent_handle & torrentHandle, lt::file_index_t fileIndex, std::int64_t tailBytes)
@@ -80,7 +85,6 @@ inline void PrioritizeFileTail(const lt::torrent_handle & torrentHandle, lt::fil
 			break; // protect from wrap-around
 	}
 }
-
 }
 
 class TorrentDownloader::Impl
@@ -92,6 +96,21 @@ public:
 	{
 		m_settings.set_int(lt::settings_pack::alert_mask, lt::alert_category::error | lt::alert_category::storage | lt::alert_category::status);
 		m_session = std::make_unique<lt::session>(m_settings);
+	}
+
+	lt::file_index_t GetFirstVideoFileIndex()
+	{
+		const auto & files = m_torrentHandle.torrent_file()->files();
+		for (lt::file_index_t index : files.file_range())
+		{
+			if (files.pad_file_at(index))
+				continue;
+			const auto name = files.file_name(index);
+			for (const auto & ext : videoExtensions)
+				if (name.ends_with(ext))
+					return index;
+		}
+		return {};
 	}
 
 	int GetDownloadProgress()
@@ -190,7 +209,7 @@ public:
 				HandleAlert(alert, isDone);
 
 			std::this_thread::sleep_for(milliseconds(200));
-			m_session->post_torrent_updates();
+			m_session->post_torrent_updates(); //@TODO: leak (accessing dead this)
 
 			if (steady_clock::now() - lastSaveResume > seconds(30))
 			{
@@ -200,10 +219,15 @@ public:
 					lt::torrent_flags::sequential_download);
 
 				static constexpr auto chunkSize = 16_MiB;
-				if (!m_hasMoov)
-					m_hasMoov = HasMoov(chunkSize);
-				if (!m_isDownloadComplete && m_torrentHandle.status().total_wanted_done >= chunkSize && !m_hasMoov)
-					PrioritizeFileTail(m_torrentHandle, libtorrent::file_index_t { 0 }, chunkSize);
+				const auto firstVideoIndex = GetFirstVideoFileIndex();
+				const auto fileName = m_torrentInfo->files().file_name(firstVideoIndex);
+				if (const bool isIsoBmff = fileName.ends_with(MP4) || fileName.ends_with(MOV))
+				{
+					if (!m_hasMoov)
+						m_hasMoov = HasMoov(chunkSize);
+					if (!m_isDownloadComplete && m_torrentHandle.status().total_wanted_done >= chunkSize && !m_hasMoov)
+						PrioritizeFileTail(m_torrentHandle, firstVideoIndex, chunkSize);
+				}
 
 				lastSaveResume = steady_clock::now();
 			}
@@ -286,16 +310,7 @@ public:
 		if (!m_torrentHandle.is_valid() || !m_torrentHandle.torrent_file())
 			return {};
 		const auto & files = m_torrentHandle.torrent_file()->files();
-		for (lt::file_index_t index : files.file_range())
-		{
-			if (files.pad_file_at(index))
-				continue;
-			const auto name = files.file_name(index);
-			for (const auto & ext : videoExtensions)
-				if (name.ends_with(ext))
-					return (std::filesystem::path(m_torrentHandle.status().save_path) / files.file_path(index)).string();
-		}
-		return {};
+		return (std::filesystem::path(m_torrentHandle.status().save_path) / files.file_path(GetFirstVideoFileIndex())).string();
 	}
 
 private:
