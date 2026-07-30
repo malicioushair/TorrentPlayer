@@ -172,7 +172,7 @@ struct OpenSubtitlesProvider::Impl
 		Cancel();
 		const auto requestGeneration = ++generation;
 		const auto username = userData.value(USERNAME).toString().trimmed();
-		const auto password = userData.value(PASSWORD).toString();
+		const auto password = userData.value(PASSWORD).toString().trimmed();
 		if (username.isEmpty() != password.isEmpty())
 		{
 			completion({

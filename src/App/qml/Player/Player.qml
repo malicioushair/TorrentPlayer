@@ -11,6 +11,11 @@ Item {
 
     focus: true
 
+    function toggleFullScreen() {
+        mainWindowID.visibility = mainWindowID.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen
+        controlsID.visible = !controlsID.visible
+    }
+
     MediaPlayer {
         id: videoID
 
@@ -85,7 +90,7 @@ Item {
     Keys.onPressed: (event)=> {
         switch(event.key) {
             case Qt.Key_F: {
-                mainWindowID.visibility = mainWindowID.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen
+                toggleFullScreen()
                 event.accepted = true;
                 break;
             }
@@ -110,8 +115,10 @@ Item {
         target: guiController
         function onVideoFileUpdated() {
             videoID.source = guiController.videoFile
-            if (videoID.playbackState !== MediaPlayer.PlayingState)
+            if (videoID.playbackState !== MediaPlayer.PlayingState) {
                 videoID.play()
+                SubtitlesController.DownloadSubtitles()
+            }
         }
     }
 
@@ -132,10 +139,7 @@ Item {
 
         anchors.fill: parent
 
-        onDoubleClicked: {
-            mainWindowID.visibility = mainWindowID.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen
-            controlsID.visible = !controlsID.visible
-        }
+        onDoubleClicked: toggleFullScreen()
         onPositionChanged: {
             controlsID.visible = true
             hideControlsTimerID.restart()

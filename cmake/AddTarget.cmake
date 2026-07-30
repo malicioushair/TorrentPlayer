@@ -153,6 +153,7 @@ macro(AddTarget)
 
         file(GLOB_RECURSE _add_target_abs_qml CONFIGURE_DEPENDS
             "${CMAKE_CURRENT_LIST_DIR}/qml/*.qml"
+            "${CMAKE_CURRENT_LIST_DIR}/qml/*.js"
         )
 
         AbsToRelPath(

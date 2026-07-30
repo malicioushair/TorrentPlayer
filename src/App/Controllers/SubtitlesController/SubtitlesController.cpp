@@ -1,5 +1,6 @@
 #include "SubtitlesController.h"
 
+#include <QtCore/qsettings.h>
 #include <string>
 
 #include <QSettings>
@@ -9,8 +10,13 @@
 #include "SubtitleLoader/SubtitleLoader.h"
 
 namespace {
+constexpr auto SUBDL_API_KEY = "subDlApiKey";
+constexpr auto USERNAME = "openSubtitlesUsername";
+constexpr auto PASSWORD = "openSubtitlesPassword";
 constexpr auto RECENT_IMDB_ID = "recentImdbId";
 constexpr auto SUBTITLE_OFFSET_STEP_MS = 500;
+constexpr auto AUTO_FIND = "AUTO_FIND";
+constexpr auto PREFERRED_LANG = "PREFERRED_LANG";
 }
 
 struct SubtitlesController::Impl
@@ -65,6 +71,8 @@ void SubtitlesController::SetVideoFile(const std::string & videoFile)
 
 void SubtitlesController::DownloadSubtitles(const QString & language)
 {
+	if (language.isEmpty())
+		m_impl->subtitleLoader.DownloadSubtitles(m_impl->settings.value(PREFERRED_LANG).toString());
 	m_impl->subtitleLoader.DownloadSubtitles(language);
 }
 
@@ -86,6 +94,39 @@ void SubtitlesController::DecreaseOffset()
 	m_impl->subtitleOffsetMs -= SUBTITLE_OFFSET_STEP_MS;
 	m_impl->UpdatePlaybackPosition();
 	emit subtitleOffsetChanged();
+}
+
+bool SubtitlesController::GetSubdlConfigured() const
+{
+	return !m_impl->userData.value(SUBDL_API_KEY).toString().isEmpty();
+}
+
+bool SubtitlesController::GetOpenSubtitlesConfigured() const
+{
+	const auto username = m_impl->userData.value(USERNAME).toString().trimmed();
+	const auto password = m_impl->userData.value(PASSWORD).toString().trimmed();
+	return !username.isEmpty() && !password.isEmpty();
+}
+
+bool SubtitlesController::GetAutoFind() const
+{
+	return m_impl->settings.value(AUTO_FIND).toBool();
+}
+
+void SubtitlesController::SetAutoFind(bool value)
+{
+	m_impl->settings.setValue(AUTO_FIND, value);
+	emit autoFindChanged();
+}
+
+QString SubtitlesController::GetPreferredLanguage() const
+{
+	return m_impl->settings.value(PREFERRED_LANG).toString();
+}
+
+void SubtitlesController::SetPreferredLanguage(const QString & lang)
+{
+	m_impl->settings.setValue(PREFERRED_LANG, lang);
 }
 
 int SubtitlesController::GetActiveSubtitleTrack() const

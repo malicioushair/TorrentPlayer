@@ -8,10 +8,10 @@ ApplicationWindow {
     visible: true
 
     Material.theme: Material.Dark
-    Material.accent: Material.Purple
+    Material.accent: '#9C6BFF'
 
-    minimumWidth: 640
-    minimumHeight: 530
+    minimumWidth: 900
+    minimumHeight: 620
     title: "Torrent Video Player"
 
     Loader {
