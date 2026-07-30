@@ -5,7 +5,7 @@ import QtQuick.Dialogs
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 
-import "colors.js" as Colors
+import "../colors.js" as Colors
 
 Dialog {
     id: rootID
@@ -51,6 +51,7 @@ Dialog {
     onOpened: currentSection = 0
     onAccepted: {
         guiController.savePath = generalSettingsID.savePath
+        guiController.frostedGlassEnabled = generalSettingsID.frostedGlassEnabled
         guiController.activeAudioTrack = playbackSettingsID.activeAudioTrack
         subtitlesSettingsID.applySubtitleSettings()
     }
@@ -186,6 +187,7 @@ Dialog {
                 id: generalSettingsID
 
                 savePath: rootID.pendingSavePath
+                frostedGlassEnabled: guiController.frostedGlassEnabled
                 onChooseFolderRequested: folderDialogID.open()
             }
 

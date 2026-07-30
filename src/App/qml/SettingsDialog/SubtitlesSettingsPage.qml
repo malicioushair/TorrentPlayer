@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Controls.Material
 
 import TorrentPlayer
-import "colors.js" as Colors
+import "../colors.js" as Colors
 
 StyledScrollView {
     id: rootID

@@ -16,17 +16,17 @@
 #include <QStringLiteral>
 #include <QUrlQuery>
 
-#include <QtQml/qqml.h>
-
 #include "glog/logging.h"
 
 #include "SubtitlesController.h"
 #include "TorrentDownloader/Observer.h"
+#include "TorrentDownloader/TorrentDownloader.h"
 
 using namespace TorrentPlayer;
 
 namespace {
 constexpr auto PATH = "PATH";
+constexpr auto FROSTED_GLASS_ENABLED = "FROSTED_GLASS_ENABLED";
 
 class HotReloadUrlInterceptor
 	: public QQmlAbstractUrlInterceptor
@@ -257,6 +257,20 @@ void GuiController::SetSavePath(const QString & path)
 {
 	m_impl->settings.setValue(PATH, path);
 	emit savePathChanged();
+}
+
+bool GuiController::GetFrostedGlassEnabled() const
+{
+	return m_impl->settings.value(FROSTED_GLASS_ENABLED, true).toBool();
+}
+
+void GuiController::SetFrostedGlassEnabled(bool enabled)
+{
+	if (GetFrostedGlassEnabled() == enabled)
+		return;
+
+	m_impl->settings.setValue(FROSTED_GLASS_ENABLED, enabled);
+	emit frostedGlassEnabledChanged();
 }
 
 QStringList GuiController::GetAudioTracks() const

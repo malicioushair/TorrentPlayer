@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 
-import "colors.js" as Colors
+import "../colors.js" as Colors
 
 ColumnLayout {
     property alias title: titleID.text

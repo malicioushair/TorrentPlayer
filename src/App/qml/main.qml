@@ -2,17 +2,25 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls.Material
 
+import "colors.js" as Colors
+
 ApplicationWindow {
     id: mainWindowID
+
+    width: 1200
+    height: 760
 
     visible: true
 
     Material.theme: Material.Dark
-    Material.accent: '#9C6BFF'
+    Material.accent: Colors.App.accent
+    Material.background: Colors.App.background
+    Material.foreground: Colors.App.foreground
 
     minimumWidth: 900
     minimumHeight: 620
-    title: "Torrent Video Player"
+    color: Colors.App.background
+    title: "TorrentPlayer"
 
     Loader {
         id: mainWindowLoaderID
