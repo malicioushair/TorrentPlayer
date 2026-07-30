@@ -19,12 +19,23 @@ Item {
         }
     }
 
+    Connections {
+        target: settingsDialogLoaderID.item
+        ignoreUnknownSignals: true
+
+        function onClosed() {
+            settingsDialogLoaderID.source = ""
+        }
+    }
+
     MenuBar {
         Menu {
             title: qsTr("TorrentPlayer")
             MenuItem {
                 text: qsTr("Settings…")
-                onTriggered: settingsDialogID.open()
+                onTriggered: {
+                    settingsDialogLoaderID.setSource("SettingsDialog/SettingsDialog.qml")
+                }
             }
             MenuSeparator {}
             MenuItem {
@@ -34,8 +45,10 @@ Item {
         }
     }
 
-    SettingsDialog {
-        id: settingsDialogID
+    Loader {
+        id: settingsDialogLoaderID
+
+        onLoaded: item.open()
     }
 
     Shortcut {
@@ -71,5 +84,4 @@ Item {
             Layout.fillHeight: true
         }
     }
-
 }

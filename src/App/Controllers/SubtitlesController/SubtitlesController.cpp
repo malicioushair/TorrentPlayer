@@ -9,6 +9,9 @@
 #include "SubtitleLoader/SubtitleLoader.h"
 
 namespace {
+constexpr auto SUBDL_API_KEY = "subDlApiKey";
+constexpr auto USERNAME = "openSubtitlesUsername";
+constexpr auto PASSWORD = "openSubtitlesPassword";
 constexpr auto RECENT_IMDB_ID = "recentImdbId";
 constexpr auto SUBTITLE_OFFSET_STEP_MS = 500;
 }
@@ -86,6 +89,18 @@ void SubtitlesController::DecreaseOffset()
 	m_impl->subtitleOffsetMs -= SUBTITLE_OFFSET_STEP_MS;
 	m_impl->UpdatePlaybackPosition();
 	emit subtitleOffsetChanged();
+}
+
+bool SubtitlesController::GetSubdlConfigured() const
+{
+	return !m_impl->userData.value(SUBDL_API_KEY).toString().isEmpty();
+}
+
+bool SubtitlesController::GetOpenSubtitlesConfigured() const
+{
+	const auto username = m_impl->userData.value(USERNAME).toString().trimmed();
+	const auto password = m_impl->userData.value(PASSWORD).toString().trimmed();
+	return !username.isEmpty() && !password.isEmpty();
 }
 
 int SubtitlesController::GetActiveSubtitleTrack() const
