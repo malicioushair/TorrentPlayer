@@ -115,8 +115,10 @@ Item {
         target: guiController
         function onVideoFileUpdated() {
             videoID.source = guiController.videoFile
-            if (videoID.playbackState !== MediaPlayer.PlayingState)
+            if (videoID.playbackState !== MediaPlayer.PlayingState) {
                 videoID.play()
+                SubtitlesController.DownloadSubtitles()
+            }
         }
     }
 

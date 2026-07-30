@@ -63,8 +63,8 @@ StyledScrollView {
                 Layout.rightMargin: -20
 
                 scale: 0.75
-                checked: false
-                onClicked: checked = true
+                checked: SubtitlesController.autoFind
+                onClicked: SubtitlesController.autoFind = checked
             }
         }
 
@@ -110,6 +110,8 @@ StyledScrollView {
                 id: preferedLanguageInputID
                 Layout.preferredHeight: 30
                 model: ["EN", "RU"]
+                currentValue: SubtitlesController.preferredLanguage
+                onActivated: SubtitlesController.preferredLanguage = currentValue
             }
         }
     }
