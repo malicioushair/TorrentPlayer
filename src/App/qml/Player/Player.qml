@@ -348,6 +348,9 @@ Item {
         anchors.fill: parent
 
         hoverEnabled: true
+        cursorShape: rootID.playerOverlayVisible
+            ? Qt.ArrowCursor
+            : Qt.BlankCursor
 
         onClicked: rootID.forceActiveFocus()
         onDoubleClicked: rootID.toggleFullScreen()
