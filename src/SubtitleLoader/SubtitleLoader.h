@@ -33,6 +33,7 @@ signals:
 	void subtitleTracksChanged();
 	void activeSubtitleTrackChanged();
 	void currentSubtitleTextChanged();
+	void subtitleDownloadSucceeded();
 	void showErrorMessage(const QString & text, const QString & description);
 
 private:

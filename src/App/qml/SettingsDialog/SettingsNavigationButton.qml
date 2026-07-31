@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 
-import "colors.js" as Colors
+import "../colors.js" as Colors
 
 Button {
     id: rootID
@@ -20,7 +20,7 @@ Button {
             ? Colors.SettingsDialog.navigationSelected
             : rootID.hovered
                 ? Colors.SettingsDialog.navigationHovered
-                : Colors.SettingsDialog.transparent
+                : Colors.App.transparent
 
         Rectangle {
             anchors.left: parent.left

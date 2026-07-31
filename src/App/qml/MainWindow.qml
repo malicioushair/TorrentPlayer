@@ -1,13 +1,14 @@
 import QtQuick
-import QtQuick.Layouts
-import QtQuick.Controls.Material
 
 import "ErrorMessageDialog"
-import "SettingsDialog"
 import "Player"
 
 Item {
     id: rootID
+
+    function openSettings() {
+        settingsDialogLoaderID.setSource("SettingsDialog/SettingsDialog.qml")
+    }
 
     Connections {
         target: guiController
@@ -25,23 +26,6 @@ Item {
 
         function onClosed() {
             settingsDialogLoaderID.source = ""
-        }
-    }
-
-    MenuBar {
-        Menu {
-            title: qsTr("TorrentPlayer")
-            MenuItem {
-                text: qsTr("Settings…")
-                onTriggered: {
-                    settingsDialogLoaderID.setSource("SettingsDialog/SettingsDialog.qml")
-                }
-            }
-            MenuSeparator {}
-            MenuItem {
-                text: qsTr("Quit")
-                onTriggered: Qt.quit()
-            }
         }
     }
 
@@ -74,14 +58,11 @@ Item {
         id: errorMessageDialogID
     }
 
-    ColumnLayout {
+    Player {
+        id: playerID
+
         anchors.fill: parent
 
-        Player {
-            id: playerID
-
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-        }
+        onOpenSettingsRequested: rootID.openSettings()
     }
 }

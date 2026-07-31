@@ -16,17 +16,17 @@
 #include <QStringLiteral>
 #include <QUrlQuery>
 
-#include <QtQml/qqml.h>
-
 #include "glog/logging.h"
 
 #include "SubtitlesController.h"
-#include "TorrentDownloader/Observer.h"
+#include "TorrentDownloader/ITorrentDownloaderObserver.h"
+#include "TorrentDownloader/TorrentDownloader.h"
 
 using namespace TorrentPlayer;
 
 namespace {
 constexpr auto PATH = "PATH";
+constexpr auto FROSTED_GLASS_ENABLED = "FROSTED_GLASS_ENABLED";
 
 class HotReloadUrlInterceptor
 	: public QQmlAbstractUrlInterceptor
@@ -136,7 +136,7 @@ struct GuiController::Impl
 
 GuiController::GuiController(Notifier & notifier, QObject * parent)
 	: QObject(parent)
-	, IObserver(notifier)
+	, ITorrentDownloaderObserver(notifier)
 	, m_impl(std::make_unique<Impl>(notifier, *this))
 {
 	m_impl->engine.rootContext()->setContextProperty("guiController", this);
@@ -259,6 +259,20 @@ void GuiController::SetSavePath(const QString & path)
 	emit savePathChanged();
 }
 
+bool GuiController::GetFrostedGlassEnabled() const
+{
+	return m_impl->settings.value(FROSTED_GLASS_ENABLED, true).toBool();
+}
+
+void GuiController::SetFrostedGlassEnabled(bool enabled)
+{
+	if (GetFrostedGlassEnabled() == enabled)
+		return;
+
+	m_impl->settings.setValue(FROSTED_GLASS_ENABLED, enabled);
+	emit frostedGlassEnabledChanged();
+}
+
 QStringList GuiController::GetAudioTracks() const
 {
 	return m_impl->audioTracks;
@@ -316,4 +330,25 @@ void GuiController::UpdateSubtitlesVideoFile()
 {
 	if (m_impl->subtitlesController)
 		m_impl->subtitlesController->SetVideoFile(m_impl->videoFile);
+}
+
+bool GuiController::IsMacOS() const
+{
+	return
+#ifdef Q_OS_MAC
+		true
+#else
+		false
+#endif
+		;
+}
+
+void GuiController::OnDownloadStarted()
+{
+	emit torrentDownloadStarted();
+}
+
+void TorrentPlayer::GuiController::OnDownloadFinished()
+{
+	emit torrentDownloadFinished();
 }

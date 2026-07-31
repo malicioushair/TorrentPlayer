@@ -31,6 +31,7 @@ struct SubtitlesController::Impl
 		QObject::connect(&subtitleLoader, &SubtitleLoader::activeSubtitleTrackChanged, &controller, &SubtitlesController::activeSubtitleTrackChanged);
 		QObject::connect(&subtitleLoader, &SubtitleLoader::subtitleTracksChanged, &controller, &SubtitlesController::subtitleTracksChanged);
 		QObject::connect(&subtitleLoader, &SubtitleLoader::currentSubtitleTextChanged, &controller, &SubtitlesController::currentSubtitleTextChanged);
+		QObject::connect(&subtitleLoader, &SubtitleLoader::subtitleDownloadSucceeded, &controller, &SubtitlesController::subtitleDownloadSucceeded);
 	}
 
 	SubtitlesController & controller;
@@ -73,7 +74,8 @@ void SubtitlesController::DownloadSubtitles(const QString & language)
 {
 	if (language.isEmpty())
 		m_impl->subtitleLoader.DownloadSubtitles(m_impl->settings.value(PREFERRED_LANG).toString());
-	m_impl->subtitleLoader.DownloadSubtitles(language);
+	else
+		m_impl->subtitleLoader.DownloadSubtitles(language);
 }
 
 void SubtitlesController::SetPlaybackPosition(qint64 positionMs)

@@ -2,18 +2,19 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 
-import "colors.js" as Colors
+import "../colors.js" as Colors
 
 StyledScrollView {
     id: rootID
 
     property string savePath: ""
+    property bool frostedGlassEnabled: true
 
     signal chooseFolderRequested
 
     SettingsPageHeader {
         title: qsTr("General")
-        description: qsTr("Choose where downloaded videos and torrent data are stored.")
+        description: qsTr("Configure downloads and player appearance.")
     }
 
     SettingsSection {
@@ -64,6 +65,26 @@ StyledScrollView {
                 text: qsTr("Choose…")
                 onClicked: rootID.chooseFolderRequested()
             }
+        }
+    }
+
+    SettingsSection {
+        title: qsTr("Player appearance")
+
+        CheckBox {
+            Layout.fillWidth: true
+
+            text: qsTr("Blur video behind player controls")
+            checked: rootID.frostedGlassEnabled
+            onToggled: rootID.frostedGlassEnabled = checked
+        }
+
+        Label {
+            Layout.fillWidth: true
+
+            text: qsTr("Creates a translucent frosted-glass effect while video is playing.")
+            color: Colors.SettingsDialog.secondaryText
+            wrapMode: Text.WordWrap
         }
     }
 }

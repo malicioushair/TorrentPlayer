@@ -145,6 +145,7 @@ struct SubtitleLoader::Impl
 			cache.Store(outcome.context.videoPath, outcome.context.language, processed->cachePayload, cacheError);
 		}
 		Apply(std::move(*processed), outcome.provider, outcome.context.language);
+		emit loader.subtitleDownloadSucceeded();
 	}
 };
 
@@ -200,7 +201,10 @@ void SubtitleLoader::DownloadSubtitles(const QString & language)
 	}
 
 	if (m_impl->TryLoadCached(normalizedLanguage))
+	{
+		emit subtitleDownloadSucceeded();
 		return;
+	}
 
 	m_impl->requestCoordinator.Request(
 		m_impl->videoPath,

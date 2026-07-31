@@ -2,16 +2,18 @@
 
 class Notifier;
 
-class IObserver
+class ITorrentDownloaderObserver
 {
 public:
-	IObserver(Notifier & notifier);
+	ITorrentDownloaderObserver(Notifier & notifier);
 
-	virtual ~IObserver();
+	virtual ~ITorrentDownloaderObserver();
 
 	virtual void OnVideoFileUpdated() = 0;
 	virtual void OnDownloadProgressChanged() = 0;
 	virtual void OnCannotPlayVideo() = 0;
+	virtual void OnDownloadStarted() = 0;
+	virtual void OnDownloadFinished() = 0;
 
 private:
 	Notifier & m_notifier;

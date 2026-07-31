@@ -14,6 +14,7 @@ AddTarget(
             Core
             Gui
             Quick
+            QuickEffects
             QuickLayouts
             QuickControls2
             Multimedia
@@ -24,6 +25,7 @@ AddTarget(
     DEPENDENCIES
         Qt6::Multimedia
         Qt6::Quick
+        Qt6::QuickEffects
         Qt6::QuickLayouts
         Qt6::QuickControls2
         TorrentDownloader

@@ -1,6 +1,7 @@
 #include "TorrentDownloader.h"
 
 #include <chrono>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <ios>
@@ -88,7 +89,6 @@ inline void PrioritizeFileTail(const lt::torrent_handle & torrentHandle, lt::fil
 }
 
 class TorrentDownloader::Impl
-	: public Notifier
 {
 public:
 	Impl(Notifier & notifier)
@@ -235,6 +235,7 @@ public:
 
 		LOG(INFO) << "Torrent download completed. Video file: " << GetVideoFile();
 		m_isDownloadComplete = true;
+		m_notifier.DownloadFinished();
 	}
 
 	void HandleAlert(const lt::alert * alert, bool & is_done)
@@ -262,8 +263,9 @@ public:
 				const lt::torrent_status & status = state_update_alert->status.front();
 				std::string torrent_name = m_torrentHandle.is_valid() && m_torrentHandle.torrent_file() ? m_torrentHandle.torrent_file()->name() : "<unknown>";
 
+				const auto state = getTorrentStateName(status.state);
 				VLOG(1) << "\r" << torrent_name << ": "
-						<< getTorrentStateName(status.state) << ' '
+						<< state << ' '
 						<< (status.download_payload_rate / 1000) << " kB/s "
 						<< (status.total_done / 1000) << " kB ("
 						<< (status.progress_ppm / 10000) << "%) downloaded ("
@@ -280,6 +282,8 @@ public:
 				}
 
 				UpdateDownloadProgress();
+				if (strcmp(state, "downloading") == 0)
+					m_notifier.DownloadStarted();
 			}
 		}
 	}
