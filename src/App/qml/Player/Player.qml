@@ -17,10 +17,9 @@ Item {
     readonly property bool hasMedia: {
         return videoID.mediaStatus !== MediaPlayer.NoMedia
     }
-    readonly property bool downloading: guiController.downloadProgress > 0
-        && guiController.downloadProgress < 100
     readonly property bool fullScreen: rootID.Window.window
         && rootID.Window.window.visibility === Window.FullScreen
+    property bool downloading: false
     property bool playerOverlayVisible: true
     property real lastAudibleVolume: 1
 
@@ -702,6 +701,12 @@ Item {
                 videoID.play()
                 SubtitlesController.DownloadSubtitles()
             }
+        }
+        function onTorrentDownloadStarted() {
+            rootID.downloading = true
+        }
+        function onTorrentDownloadFinished() {
+            rootID.downloading = false
         }
     }
 

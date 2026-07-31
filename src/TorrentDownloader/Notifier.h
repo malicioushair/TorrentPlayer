@@ -4,7 +4,7 @@
 #include <mutex>
 #include <vector>
 
-class IObserver;
+class ITorrentDownloaderObserver;
 
 class Notifier
 {
@@ -12,11 +12,13 @@ public:
 	Notifier();
 	virtual ~Notifier();
 
-	void RegisterObserver(IObserver * observer);
-	void UnregisterObserver(IObserver * observer);
+	void RegisterObserver(ITorrentDownloaderObserver * observer);
+	void UnregisterObserver(ITorrentDownloaderObserver * observer);
 	void OnVideoFileUpdated();
 	void OnDownloadProgressChanged();
 	void CannotPlayVideo();
+	void DownloadStarted();
+	void DownloadFinished();
 
 private:
 	struct Impl;

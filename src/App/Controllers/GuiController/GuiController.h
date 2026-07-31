@@ -5,12 +5,12 @@
 #include <QStringList>
 #include <QtCore/qtmetamacros.h>
 
-#include "TorrentDownloader/Observer.h"
+#include "TorrentDownloader/ITorrentDownloaderObserver.h"
 
 namespace TorrentPlayer {
 class GuiController
 	: public QObject
-	, public IObserver
+	, public ITorrentDownloaderObserver
 {
 	Q_OBJECT
 	Q_DISABLE_COPY(GuiController)
@@ -31,6 +31,8 @@ signals:
 	void audioTracksChanged();
 	void activeAudioTrackChanged();
 	void showErrorMessage(const QString & text, const QString & description);
+	void torrentDownloadStarted();
+	void torrentDownloadFinished();
 
 public:
 	GuiController(Notifier & notifier, QObject * parent = nullptr);
@@ -44,10 +46,12 @@ public:
 
 	void DownloadWithTorrentFile(const QUrl & filePath);
 
-public: // IObserver
-	void OnVideoFileUpdated() override;
-	void OnDownloadProgressChanged() override;
-	void OnCannotPlayVideo() override;
+public: // ITorrentDownloaderObserver
+	void OnVideoFileUpdated() final;
+	void OnDownloadProgressChanged() final;
+	void OnCannotPlayVideo() final;
+	void OnDownloadStarted() final;
+	void OnDownloadFinished() final;
 
 private:
 	int GetDownloadProgress() const;

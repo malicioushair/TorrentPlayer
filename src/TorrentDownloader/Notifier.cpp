@@ -4,7 +4,7 @@
 #include <functional>
 #include <memory>
 
-#include "TorrentDownloader/Observer.h"
+#include "TorrentDownloader/ITorrentDownloaderObserver.h"
 
 namespace {
 
@@ -12,7 +12,7 @@ namespace {
 
 struct Notifier::Impl
 {
-	std::vector<IObserver *> observers;
+	std::vector<ITorrentDownloaderObserver *> observers;
 	std::mutex mutex;
 
 	template <typename MemFn>
@@ -32,13 +32,13 @@ Notifier::Notifier()
 
 Notifier::~Notifier() = default;
 
-void Notifier::RegisterObserver(IObserver * observer)
+void Notifier::RegisterObserver(ITorrentDownloaderObserver * observer)
 {
 	std::lock_guard<std::mutex> lock(m_impl->mutex);
 	m_impl->observers.push_back(observer);
 }
 
-void Notifier::UnregisterObserver(IObserver * observer)
+void Notifier::UnregisterObserver(ITorrentDownloaderObserver * observer)
 {
 	std::lock_guard<std::mutex> lock(m_impl->mutex);
 	m_impl->observers.erase(std::remove(m_impl->observers.begin(), m_impl->observers.end(), observer), m_impl->observers.end());
@@ -46,15 +46,25 @@ void Notifier::UnregisterObserver(IObserver * observer)
 
 void Notifier::OnVideoFileUpdated()
 {
-	m_impl->NotifyAll(&IObserver::OnVideoFileUpdated);
+	m_impl->NotifyAll(&ITorrentDownloaderObserver::OnVideoFileUpdated);
 }
 
 void Notifier::OnDownloadProgressChanged()
 {
-	m_impl->NotifyAll(&IObserver::OnDownloadProgressChanged);
+	m_impl->NotifyAll(&ITorrentDownloaderObserver::OnDownloadProgressChanged);
 }
 
 void Notifier::CannotPlayVideo()
 {
-	m_impl->NotifyAll(&IObserver::OnCannotPlayVideo);
+	m_impl->NotifyAll(&ITorrentDownloaderObserver::OnCannotPlayVideo);
+}
+
+void Notifier::DownloadStarted()
+{
+	m_impl->NotifyAll(&ITorrentDownloaderObserver::OnDownloadStarted);
+}
+
+void Notifier::DownloadFinished()
+{
+	m_impl->NotifyAll(&ITorrentDownloaderObserver::OnDownloadFinished);
 }

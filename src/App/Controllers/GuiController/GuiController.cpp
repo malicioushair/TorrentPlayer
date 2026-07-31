@@ -19,7 +19,7 @@
 #include "glog/logging.h"
 
 #include "SubtitlesController.h"
-#include "TorrentDownloader/Observer.h"
+#include "TorrentDownloader/ITorrentDownloaderObserver.h"
 #include "TorrentDownloader/TorrentDownloader.h"
 
 using namespace TorrentPlayer;
@@ -136,7 +136,7 @@ struct GuiController::Impl
 
 GuiController::GuiController(Notifier & notifier, QObject * parent)
 	: QObject(parent)
-	, IObserver(notifier)
+	, ITorrentDownloaderObserver(notifier)
 	, m_impl(std::make_unique<Impl>(notifier, *this))
 {
 	m_impl->engine.rootContext()->setContextProperty("guiController", this);
@@ -341,4 +341,14 @@ bool GuiController::IsMacOS() const
 		false
 #endif
 		;
+}
+
+void GuiController::OnDownloadStarted()
+{
+	emit torrentDownloadStarted();
+}
+
+void TorrentPlayer::GuiController::OnDownloadFinished()
+{
+	emit torrentDownloadFinished();
 }
