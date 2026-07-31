@@ -20,6 +20,7 @@ Item {
     readonly property bool fullScreen: rootID.Window.window
         && rootID.Window.window.visibility === Window.FullScreen
     property bool downloading: false
+    property string infoBubbleText
     property bool playerOverlayVisible: true
     property real lastAudibleVolume: 1
 
@@ -63,6 +64,12 @@ Item {
         playerOverlayVisible = true
         if (fullScreen)
             hideControlsTimerID.restart()
+    }
+
+    function showInfoBubble(message) {
+        infoBubbleText = message
+        infoBubbleID.visible = true
+        infoBubbleVisibilityTimerID.restart()
     }
 
     function toggleFullScreen() {
@@ -281,7 +288,7 @@ Item {
     }
 
     Rectangle {
-        id: subtitleOffsetBubbleID
+        id: infoBubbleID
 
         z: 3
         anchors {
@@ -291,7 +298,7 @@ Item {
             rightMargin: 32
         }
 
-        width: subtitleOffsetTextID.implicitWidth + 24
+        width: infoBubbleTextID.implicitWidth + 24
         height: 38
         radius: height / 2
 
@@ -301,11 +308,11 @@ Item {
         visible: false
 
         Label {
-            id: subtitleOffsetTextID
+            id: infoBubbleTextID
 
             anchors.centerIn: parent
 
-            text: `${SubtitlesController.subtitleOffset > 0 ? "+" : ""}${SubtitlesController.subtitleOffset} ms`
+            text: rootID.infoBubbleText
             color: Colors.Player.subtitleText
             font.pixelSize: 14
             font.weight: Font.Medium
@@ -679,10 +686,10 @@ Item {
     }
 
     Timer {
-        id: subtitleOffsetVisibilityTimerID
+        id: infoBubbleVisibilityTimerID
 
         interval: 1000
-        onTriggered: subtitleOffsetBubbleID.visible = false
+        onTriggered: infoBubbleID.visible = false
     }
 
     Timer {
@@ -743,8 +750,14 @@ Item {
             rootID.showPlayerOverlay()
         }
     }
-    Keys.onUpPressed: volumeControlID.value += 0.1
-    Keys.onDownPressed: volumeControlID.value -= 0.1 // add text to bubble
+    Keys.onUpPressed: {
+        volumeControlID.value = Math.min(volumeControlID.to, volumeControlID.value + 0.1)
+        rootID.showInfoBubble(qsTr("Volume: %1%").arg(Math.round(volumeControlID.value * 100)))
+    }
+    Keys.onDownPressed: {
+        volumeControlID.value = Math.max(volumeControlID.from, volumeControlID.value - 0.1)
+        rootID.showInfoBubble(qsTr("Volume: %1%").arg(Math.round(volumeControlID.value * 100)))
+    }
     Keys.onPressed: event => {
         switch (event.key) {
         case Qt.Key_F:
@@ -753,14 +766,12 @@ Item {
             break
         case Qt.Key_G:
             SubtitlesController.DecreaseOffset()
-            subtitleOffsetBubbleID.visible = true
-            subtitleOffsetVisibilityTimerID.restart()
+            rootID.showInfoBubble(`${SubtitlesController.subtitleOffset > 0 ? "+" : ""}${SubtitlesController.subtitleOffset} ms`)
             event.accepted = true
             break
         case Qt.Key_H:
             SubtitlesController.IncreaseOffset()
-            subtitleOffsetBubbleID.visible = true
-            subtitleOffsetVisibilityTimerID.restart()
+            rootID.showInfoBubble(`${SubtitlesController.subtitleOffset > 0 ? "+" : ""}${SubtitlesController.subtitleOffset} ms`)
             event.accepted = true
             break
         }
