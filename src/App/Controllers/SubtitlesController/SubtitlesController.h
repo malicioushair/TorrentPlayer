@@ -44,6 +44,7 @@ signals:
 	void subtitleTracksChanged();
 	void currentSubtitleTextChanged();
 	void subtitleOffsetChanged();
+	void subtitleDownloadSucceeded();
 	void imdbIdChanged();
 	void userDataChanged();
 	void showErrorMessage(const QString & text, const QString & description);

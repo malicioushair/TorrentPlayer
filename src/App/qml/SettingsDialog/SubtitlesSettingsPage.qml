@@ -8,6 +8,7 @@ import "../colors.js" as Colors
 StyledScrollView {
     id: rootID
 
+    property bool manualDownloadPending: false
     property var userData: SubtitlesController.userData
 
     signal imdbIdEdited(string imdbId)
@@ -32,7 +33,32 @@ StyledScrollView {
 
     onDownloadRequested: {
         rootID.applySubtitleSettings()
+        rootID.manualDownloadPending = true
         SubtitlesController.DownloadSubtitles(preferedLanguageInputID.currentValue)
+    }
+
+    Connections {
+        target: SubtitlesController
+
+        function onShowErrorMessage() {
+            rootID.manualDownloadPending = false
+        }
+
+        function onSubtitleDownloadSucceeded() {
+            if (!rootID.manualDownloadPending)
+                return
+
+            rootID.manualDownloadPending = false
+            downloadSuccessBubbleID.visible = true
+            downloadSuccessTimerID.restart()
+        }
+    }
+
+    Timer {
+        id: downloadSuccessTimerID
+
+        interval: 3000
+        onTriggered: downloadSuccessBubbleID.visible = false
     }
 
     SettingsPageHeader {
@@ -346,6 +372,29 @@ StyledScrollView {
 
             Item {
                 Layout.fillWidth: true
+            }
+
+            Rectangle {
+                id: downloadSuccessBubbleID
+
+                Layout.preferredWidth: downloadSuccessTextID.implicitWidth + 24
+                Layout.preferredHeight: 38
+
+                radius: height / 2
+                color: Colors.SettingsDialog.inputBackground
+                border.width: 1
+                border.color: Colors.SettingsDialog.configured
+                visible: false
+
+                Label {
+                    id: downloadSuccessTextID
+
+                    anchors.centerIn: parent
+
+                    text: qsTr("Subtitles downloaded.")
+                    color: Colors.SettingsDialog.configured
+                    font.weight: Font.Medium
+                }
             }
 
             Button {

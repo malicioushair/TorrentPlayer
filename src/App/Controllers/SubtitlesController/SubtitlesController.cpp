@@ -31,6 +31,7 @@ struct SubtitlesController::Impl
 		QObject::connect(&subtitleLoader, &SubtitleLoader::activeSubtitleTrackChanged, &controller, &SubtitlesController::activeSubtitleTrackChanged);
 		QObject::connect(&subtitleLoader, &SubtitleLoader::subtitleTracksChanged, &controller, &SubtitlesController::subtitleTracksChanged);
 		QObject::connect(&subtitleLoader, &SubtitleLoader::currentSubtitleTextChanged, &controller, &SubtitlesController::currentSubtitleTextChanged);
+		QObject::connect(&subtitleLoader, &SubtitleLoader::subtitleDownloadSucceeded, &controller, &SubtitlesController::subtitleDownloadSucceeded);
 	}
 
 	SubtitlesController & controller;
