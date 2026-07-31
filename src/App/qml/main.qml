@@ -7,6 +7,11 @@ import "colors.js" as Colors
 ApplicationWindow {
     id: mainWindowID
 
+    function openSettings() {
+        if (mainWindowLoaderID.item)
+            mainWindowLoaderID.item.openSettings()
+    }
+
     width: 1200
     height: 760
 
@@ -21,6 +26,28 @@ ApplicationWindow {
     minimumHeight: 620
     color: Colors.App.background
     title: "TorrentPlayer"
+
+    Action {
+        id: settingsActionID
+
+        text: qsTr("Settings…")
+        shortcut: "Ctrl+,"
+        onTriggered: mainWindowID.openSettings()
+    }
+
+    menuBar: guiController.IsMacOS() ? macOSMenuID : null
+
+    MenuBar {
+        id: macOSMenuID
+
+        Menu {
+            title: qsTr("TorrentPlayer")
+
+            MenuItem {
+                action: settingsActionID
+            }
+        }
+    }
 
     Loader {
         id: mainWindowLoaderID

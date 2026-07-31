@@ -331,3 +331,14 @@ void GuiController::UpdateSubtitlesVideoFile()
 	if (m_impl->subtitlesController)
 		m_impl->subtitlesController->SetVideoFile(m_impl->videoFile);
 }
+
+bool GuiController::IsMacOS() const
+{
+	return
+#ifdef Q_OS_MAC
+		true
+#else
+		false
+#endif
+		;
+}

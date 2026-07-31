@@ -625,13 +625,6 @@ Item {
                     onClicked: videoID.position = Math.min(videoID.duration, videoID.position + 5000)
                 }
 
-                PlayerControlButton {
-                    iconName: "stop"
-                    tooltipText: qsTr("Stop")
-                    enabled: rootID.hasMedia
-                    onClicked: videoID.stop()
-                }
-
                 Item {
                     Layout.fillWidth: true
                 }
@@ -742,6 +735,8 @@ Item {
             rootID.showPlayerOverlay()
         }
     }
+    Keys.onUpPressed: volumeControlID.value += 0.1
+    Keys.onDownPressed: volumeControlID.value -= 0.1 // add text to bubble
     Keys.onPressed: event => {
         switch (event.key) {
         case Qt.Key_F:

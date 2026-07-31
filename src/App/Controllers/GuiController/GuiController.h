@@ -40,6 +40,7 @@ public:
 	Q_INVOKABLE void BumpHotReloadToken();
 	Q_INVOKABLE QUrl GetVideoFile() const;
 	Q_INVOKABLE void AddFile(const QUrl & filePath);
+	Q_INVOKABLE bool IsMacOS() const;
 
 	void DownloadWithTorrentFile(const QUrl & filePath);
 
