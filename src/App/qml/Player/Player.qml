@@ -223,7 +223,7 @@ Item {
         opacity: rootID.playerOverlayVisible && rootID.downloading ? 1 : 0
         visible: opacity > 0
 
-        Row {
+        RowLayout {
             id: downloadStatusRowID
 
             anchors.centerIn: parent
