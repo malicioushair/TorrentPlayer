@@ -13,6 +13,7 @@ public:
 
 	void DownloadWithMagnet(const std::string & magnet_url, const std::string & savePath);
 	void DownloadWithTorrentFile(const std::string & torrentPath, const std::string & savePath);
+	void StopDownload();
 	std::string GetVideoFile() const;
 	int GetDownloadProgress() const;
 

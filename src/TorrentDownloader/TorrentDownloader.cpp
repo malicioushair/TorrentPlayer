@@ -7,6 +7,7 @@
 #include <ios>
 #include <iostream>
 #include <memory>
+#include <stop_token>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -96,6 +97,11 @@ public:
 	{
 		m_settings.set_int(lt::settings_pack::alert_mask, lt::alert_category::error | lt::alert_category::storage | lt::alert_category::status);
 		m_session = std::make_unique<lt::session>(m_settings);
+	}
+
+	~Impl()
+	{
+		StopDownload();
 	}
 
 	lt::file_index_t GetFirstVideoFileIndex()
@@ -194,13 +200,37 @@ public:
 		return beginHasMoov || endHasMoov;
 	}
 
-	void DownloadTorrent()
+	void StartDownload()
+	{
+		StopDownload();
+		m_worker = std::jthread([this](std::stop_token stopToken) {
+			try
+			{
+				DownloadTorrent(stopToken);
+			}
+			catch (const std::exception & e)
+			{
+				LOG(ERROR) << "Error downloading torrent: " << e.what();
+			}
+		});
+	}
+
+	void StopDownload()
+	{
+		if (!m_worker.joinable())
+			return;
+
+		m_worker.request_stop();
+		m_worker.join();
+	}
+
+	void DownloadTorrent(std::stop_token stopToken)
 	{
 		using namespace std::chrono;
 		auto lastSaveResume = steady_clock::now();
 		bool isDone = false;
 
-		while (!isDone)
+		while (!stopToken.stop_requested() && !isDone)
 		{
 			std::vector<lt::alert *> alerts;
 			m_session->pop_alerts(&alerts);
@@ -209,7 +239,9 @@ public:
 				HandleAlert(alert, isDone);
 
 			std::this_thread::sleep_for(milliseconds(200));
-			m_session->post_torrent_updates(); //@TODO: leak (accessing dead this)
+			if (stopToken.stop_requested())
+				return;
+			m_session->post_torrent_updates();
 
 			if (steady_clock::now() - lastSaveResume > seconds(30))
 			{
@@ -232,6 +264,9 @@ public:
 				lastSaveResume = steady_clock::now();
 			}
 		}
+
+		if (!isDone)
+			return;
 
 		LOG(INFO) << "Torrent download completed. Video file: " << GetVideoFile();
 		m_isDownloadComplete = true;
@@ -335,6 +370,7 @@ private:
 	std::shared_ptr<lt::torrent_info> m_torrentInfo;
 	bool m_isDownloadComplete { false };
 	bool m_hasMoov { false };
+	std::jthread m_worker;
 };
 
 TorrentDownloader::TorrentDownloader(Notifier & notifier)
@@ -348,8 +384,9 @@ void TorrentDownloader::DownloadWithMagnet(const std::string & magnet_url, const
 {
 	try
 	{
+		m_impl->StopDownload();
 		m_impl->AddMagnetLink(magnet_url, savePath);
-		m_impl->DownloadTorrent();
+		m_impl->DownloadTorrent({});
 	}
 	catch (const std::exception & e)
 	{
@@ -361,15 +398,19 @@ void TorrentDownloader::DownloadWithTorrentFile(const std::string & torrentPath,
 {
 	try
 	{
+		m_impl->StopDownload();
 		m_impl->AddTorrentFile(torrentPath, savePath);
-		std::thread([this] {
-			m_impl->DownloadTorrent();
-		}).detach();
+		m_impl->StartDownload();
 	}
 	catch (const std::exception & e)
 	{
 		std::cerr << "Error: " << e.what() << std::endl;
 	}
+}
+
+void TorrentDownloader::StopDownload()
+{
+	m_impl->StopDownload();
 }
 
 std::string TorrentDownloader::GetVideoFile() const
