@@ -168,7 +168,10 @@ GuiController::GuiController(Notifier & notifier, QObject * parent)
 	UpdateSubtitlesVideoFile();
 }
 
-GuiController::~GuiController() = default;
+GuiController::~GuiController()
+{
+	m_impl->downloader.StopDownload();
+}
 
 bool GuiController::IsDebug()
 {

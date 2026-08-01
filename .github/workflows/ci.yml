@@ -31,6 +31,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Select Xcode 26.3
+        run: sudo xcode-select --switch /Applications/Xcode_26.3.app/Contents/Developer
+
       - name: Install build tools
         run: brew install cmake ninja llvm
 
@@ -95,6 +98,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Select Xcode 26.3
+        run: sudo xcode-select --switch /Applications/Xcode_26.3.app/Contents/Developer
 
       - name: Install build tools
         run: brew install cmake ninja
