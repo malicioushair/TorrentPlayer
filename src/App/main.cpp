@@ -33,7 +33,7 @@ int main(int argc, char * argv[])
 {
 	try
 	{
-		QCoreApplication::setOrganizationName("MyOrg");
+		QCoreApplication::setOrganizationName("dv");
 		QCoreApplication::setApplicationName("TorrentPlayer");
 		InitLogging(argv[0]);
 

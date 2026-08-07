@@ -4,7 +4,6 @@ from conan.tools.cmake import CMakeDeps
 
 class TorrentPlayerConan(ConanFile):
     name = "torrentplayer"
-    version = "0.1.0"
 
     settings = "os", "compiler", "build_type", "arch"
 
@@ -16,8 +15,8 @@ class TorrentPlayerConan(ConanFile):
         self.requires("zlib/1.3.1")
 
     def configure(self):
-        self.options["glog"].shared = True
-        self.options["gflags"].shared = True
+        self.options["glog"].shared = False
+        self.options["gflags"].shared = False
 
     def generate(self):
         deps = CMakeDeps(self)

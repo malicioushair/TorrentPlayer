@@ -10,17 +10,20 @@
 	<key>CFBundleName</key>
 	<string>TorrentPlayer</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.yourcompany.ab0d2faa.TorrentPlayer</string>
+	<string>com.dv.torrentplayer</string>
 	<key>CFBundleExecutable</key>
 	<string>TorrentPlayer</string>
 
+	<key>LSApplicationCategoryType</key>
+  	<string>public.app-category.video</string>
+
 	<key>CFBundleVersion</key>
-	<string>@APP_MAJOR_VERSION@.@APP_MINOR_VERSION@.@APP_PATCH_VERSION@</string>
+	<string>@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@</string>
 	<key>CFBundleShortVersionString</key>
-	<string>@APP_MAJOR_VERSION@.@APP_MINOR_VERSION@</string>
+	<string>@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@</string>
 
 	<key>LSMinimumSystemVersion</key>
-	<string></string>
+	<string>@CMAKE_OSX_DEPLOYMENT_TARGET@</string>
 
 	<key>NSHumanReadableCopyright</key>
 	<string></string>

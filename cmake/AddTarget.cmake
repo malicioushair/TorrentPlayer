@@ -148,7 +148,7 @@ macro(AddTarget)
         target_compile_definitions(
             ${ARG_TARGET_NAME}
             PRIVATE
-                MAIN_QML="${CMAKE_CURRENT_LIST_DIR}/qml/main.qml"
+                MAIN_QML="${CMAKE_CURRENT_LIST_DIR}/qml/Main.qml"
         )
 
         file(GLOB_RECURSE _add_target_abs_qml CONFIGURE_DEPENDS
