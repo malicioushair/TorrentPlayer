@@ -1,10 +1,6 @@
 include(cmake/Helpers.cmake)
 include(cmake/AddTarget.cmake)
 
-set(APP_MAJOR_VERSION 0)
-set(APP_MINOR_VERSION 1)
-set(APP_PATCH_VERSION 0)
-
 AddTarget(
     TARGET_NAME ${PROJECT_NAME}
     TYPE QT_EXECUTABLE

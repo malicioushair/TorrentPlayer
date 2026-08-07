@@ -9,7 +9,7 @@
 #include "glog/logging.h"
 
 namespace {
-constexpr auto PACKAGE = "com.myorg.torrentplayer";
+constexpr auto PACKAGE = "com.dv.torrentplayer";
 constexpr auto SERVICE = "torrentplayer";
 constexpr auto USER_DATA = "userData";
 }
@@ -20,18 +20,18 @@ QVariantMap CredentialStore::ReadUserData()
 	keychain::Error err;
 	const auto data = keychain::getPassword(PACKAGE, SERVICE, USER_DATA, err);
 	if (err.type == keychain::ErrorType::NoError)
-    {
-        const auto res = QCborValue::fromCbor(QByteArray(data));
-        if (!res.isMap())
-        {
+	{
+		const auto res = QCborValue::fromCbor(QByteArray(data));
+		if (!res.isMap())
+		{
             LOG(WARNING) << "User data has to be a Map";
             return {};
         }
         return res.toVariant().toMap();
-    }
+	}
 	if (err)
 	{
-		LOG(WARNING) << "Keychain read failed:" << USER_DATA << data << err.message;
+		LOG(WARNING) << "Keychain read failed:" << USER_DATA << err.message;
 		return {};
 	}
     LOG(WARNING) << "Could not read user data";
