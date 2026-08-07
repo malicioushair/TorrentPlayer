@@ -7,6 +7,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QStandardPaths>
+
 #include "Controllers/GuiController/GuiController.h"
 #include "TorrentDownloader/Notifier.h"
 

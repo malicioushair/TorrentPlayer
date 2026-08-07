@@ -42,7 +42,7 @@ endif()
 if (NOT FOR_APP_STORE)
     install(TARGETS ${PROJECT_NAME}
         BUNDLE DESTINATION  .
-        RUNTIME DESTINATION .
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
     install(SCRIPT ${deploy_script})
 endif()
