@@ -11,6 +11,10 @@
         DowngradeErrorMessage="A newer version of TorrentPlayer is already installed." />
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
+    <Icon Id="TorrentPlayerIcon"
+          SourceFile="..\..\resources\windows\TorrentPlayer.ico" />
+    <Property Id="ARPPRODUCTICON" Value="TorrentPlayerIcon" />
+
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="TorrentPlayer">
         <Directory Id="INSTALLBINDIR" Name="bin" />
@@ -23,7 +27,7 @@
 
     <Feature Id="Main" Title="TorrentPlayer" Level="1">
       <Files Directory="INSTALLFOLDER" Include="!(bindpath.Payload)\**">
-        <Exclude Files="!(bindpath.Payload)\TorrentPlayer.exe" />
+        <Exclude Files="!(bindpath.Payload)\bin\TorrentPlayer.exe" />
       </Files>
 
       <Component Id="TorrentPlayerExecutable" Directory="INSTALLBINDIR" Guid="dfca66af-b29c-48ce-8bc7-6a074182fea8">
@@ -34,6 +38,7 @@
                     Name="TorrentPlayer"
                     Directory="ApplicationProgramsFolder"
                     WorkingDirectory="INSTALLBINDIR"
+                    Icon="TorrentPlayerIcon"
                     Advertise="yes" />
         </File>
         <RemoveFolder Id="RemoveApplicationProgramsFolder"
