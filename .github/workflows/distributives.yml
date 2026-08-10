@@ -70,7 +70,9 @@ jobs:
 
       - name: Install WiX
         if: runner.os == 'Windows'
-        run: dotnet tool install --global wix --version 5.0.2
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+          wix extension add --global WixToolset.UI.wixext/5.0.2
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -195,20 +197,8 @@ jobs:
       - name: Build Windows MSI
         if: runner.os == 'Windows'
         run: |
-          $payload = Join-Path "${{ github.workspace }}" "${{ env.PACKAGE_DIR }}"
-          $msiPath = Join-Path $env:RUNNER_TEMP "${{ matrix.archive-name }}"
-          $wxs = Join-Path "${{ github.workspace }}" "packaging\windows\TorrentPlayer.wxs"
-
-          if (-not (Test-Path -LiteralPath (Join-Path $payload "bin\TorrentPlayer.exe"))) {
-            throw "TorrentPlayer.exe was not found in the package directory: $payload"
-          }
-
-          wix build `
-            -arch x64 `
-            -d "ProductVersion=${{ env.PRODUCT_VERSION }}" `
-            -bindpath "Payload=$payload" `
-            -out $msiPath `
-            $wxs
+          cmake --build "${{ env.BUILD_DIR }}" --target wix-installer --parallel
+          cp ${{ env.BUILD_DIR }}/package/${{ matrix.archive-name }} -Destination ${{ runner.temp }}/${{ matrix.archive-name }}
 
       - name: Archive Linux distributive
         if: runner.os == 'Linux'

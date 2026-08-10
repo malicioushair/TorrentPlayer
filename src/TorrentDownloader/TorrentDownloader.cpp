@@ -38,7 +38,7 @@ constexpr auto AVI = ".avi";
 constexpr auto MOV = ".mov";
 constexpr auto MP4 = ".mp4";
 
-constexpr std::string videoExtensions[] {
+constexpr lt::string_view videoExtensions[] {
 	{ MKV },
 	{ AVI },
 	{ MOV },

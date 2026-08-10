@@ -44,6 +44,7 @@ if (NOT FOR_APP_STORE)
         BUNDLE DESTINATION  .
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
+    install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION .)
     install(SCRIPT ${deploy_script})
 endif()
 
@@ -97,5 +98,24 @@ if(APPLE AND FOR_APP_STORE)
         USES_TERMINAL
         VERBATIM
         COMMENT "Creating Mac App Store package"
+    )
+endif()
+
+if(WIN32)
+    add_custom_target(wix-installer
+        COMMAND powershell
+            -NoProfile
+            -ExecutionPolicy Bypass
+            -File "${CMAKE_SOURCE_DIR}/scripts/build-wix-installer.ps1"
+            -ProductVersion "${PROJECT_VERSION}"
+            -BuildDir "${CMAKE_BINARY_DIR}"
+            -BuildType "$<CONFIG>"
+            -MsiOutput "${CMAKE_BINARY_DIR}/package/TorrentPlayer-Windows-x64.msi"
+            -PackageDir "${CMAKE_BINARY_DIR}/package/TorrentPlayer"
+            -SkipBuild
+        DEPENDS TorrentPlayer
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        USES_TERMINAL
+        VERBATIM
     )
 endif()

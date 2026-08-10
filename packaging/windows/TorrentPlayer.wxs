@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <Package
       Name="TorrentPlayer"
       Manufacturer="TorrentPlayer"
@@ -7,12 +8,18 @@
       UpgradeCode="65c67fd7-07e3-416c-a3b6-38444e9a6828"
       Scope="perMachine"
       Language="1033">
+
+    <Property Id="INSTALLFOLDER" Secure="yes" />
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf"
+                 Value="packaging\windows\License.rtf" />
+
     <MajorUpgrade
         DowngradeErrorMessage="A newer version of TorrentPlayer is already installed." />
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
     <Icon Id="TorrentPlayerIcon"
-          SourceFile="..\..\resources\windows\TorrentPlayer.ico" />
+          SourceFile="resources\windows\TorrentPlayer.ico" />
     <Property Id="ARPPRODUCTICON" Value="TorrentPlayerIcon" />
 
     <StandardDirectory Id="ProgramFiles64Folder">
