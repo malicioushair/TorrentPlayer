@@ -38,7 +38,7 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: |
-            dist/TorrentPlayer-macOS-x64.zip
+            dist/TorrentPlayer-macOS-x64.pkg
             dist/TorrentPlayer-Windows-x64.msi
             dist/TorrentPlayer-Linux-x64.tar.gz
   create-distributive:
@@ -55,7 +55,7 @@ jobs:
             qt-host: mac
             qt-arch: clang_64
             artifact-name: TorrentPlayer-macOS-x64
-            archive-name: TorrentPlayer-macOS-x64.zip
+            archive-name: TorrentPlayer-macOS-x64.pkg
           - name: Windows MSI
             runner: windows-2022
             qt-host: windows
@@ -72,6 +72,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Select Xcode 26.3
+        if: runner.os == 'macOS'
+        run: sudo xcode-select --switch /Applications/Xcode_26.3.app/Contents/Developer
 
       - name: Install macOS build tools
         if: runner.os == 'macOS'
@@ -104,6 +108,14 @@ jobs:
         with:
           python-version: "3.12"
 
+
+      - name: Import certificates
+        if: runner.os == 'macOS'
+        uses: apple-actions/import-codesign-certs@v7
+        with:
+          p12-file-base64: ${{ secrets.MAC_CERTS_P12_BASE64 }}
+          p12-password: ${{ secrets.CERTS_P12_PASS }}
+
       - name: Install Conan
         run: pip install conan
 
@@ -128,15 +140,25 @@ jobs:
           -s build_type=${{ env.BUILD_TYPE }}
           --build=missing
 
+      - name: Install provisioning profile
+        if: runner.os == 'macOS'
+        run: |
+          profile_path="${RUNNER_TEMP}/TorrentPlayer.provisionprofile"
+          echo -n "${{ secrets.MAC_PROVISIONING_PROFILE_BASE64 }}" | base64 --decode > "${profile_path}"
+
       - name: Configure CMake on macOS
         if: runner.os == 'macOS'
         run: |
           MACOS_SDK="$(xcrun --sdk macosx --show-sdk-path)"
-
           cmake -G Ninja -S . -B "${{ env.BUILD_DIR }}" \
             -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
             -DCMAKE_OSX_SYSROOT="$MACOS_SDK" \
             -DCMAKE_PREFIX_PATH="${QT_ROOT_DIR};${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DFOR_APP_STORE=true \
+            -DMAC_APP_IDENTITY="${{ secrets.MAC_APP_IDENTITY }}" \
+            -DMAC_INSTALLER_IDENTITY="${{ secrets.MAC_INSTALLER_IDENTITY }}" \
+            -DMAC_PROVISIONING_PROFILE="${{ runner.temp }}/TorrentPlayer.provisionprofile" \
+            -DAPPSTORE_TEAM_ID="${{ secrets.APPSTORE_TEAM_ID }}" \
             -DQT_HOST_PATH="${QT_ROOT_DIR}" \
             -DGLog_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}" \
             -DLibtorrentRasterbar_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}"
@@ -211,12 +233,11 @@ jobs:
             Write-Host "No Conan shared runtime libraries found; assuming static linking."
           }
 
-      - name: Archive macOS distributive
+      - name: Build App Store pkg
         if: runner.os == 'macOS'
         run: |
-          codesign --force --deep --sign - "${{ env.PACKAGE_DIR }}/TorrentPlayer.app"
-          ditto -c -k --sequesterRsrc --keepParent \
-            "${{ env.PACKAGE_DIR }}/TorrentPlayer.app" \
+          cmake --build "${{ env.BUILD_DIR }}" --target appstore-pkg --parallel
+          cp "${{ env.BUILD_DIR }}/TorrentPlayer-${{ env.PRODUCT_VERSION }}.pkg" \
             "${RUNNER_TEMP}/${{ matrix.archive-name }}"
 
       - name: Build Windows MSI

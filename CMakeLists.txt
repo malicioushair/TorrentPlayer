@@ -39,14 +39,12 @@ else()
     )
 endif()
 
-if (NOT FOR_APP_STORE)
-    install(TARGETS ${PROJECT_NAME}
-        BUNDLE DESTINATION  .
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    )
-    install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION .)
-    install(SCRIPT ${deploy_script})
-endif()
+install(TARGETS ${PROJECT_NAME}
+    BUNDLE DESTINATION  .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION .)
+install(SCRIPT ${deploy_script})
 
 
 if (ON_BUILD_SERVER)
