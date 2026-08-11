@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [win_distributive]
+    tags:
+      - 'v*'
 
 permissions:
   contents: read
@@ -16,6 +18,29 @@ env:
   PACKAGE_DIR: package/TorrentPlayer
 
 jobs:
+  publish-release:
+    needs: create-distributive
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all distributives
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: dist
+      - name: Create release and upload files
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }} # e.g. v0.1.1 when triggered by tag
+          name: TorrentPlayer ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            dist/TorrentPlayer-macOS-x64.zip
+            dist/TorrentPlayer-Windows-x64.msi
+            dist/TorrentPlayer-Linux-x64.tar.gz
   create-distributive:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
