@@ -259,3 +259,25 @@ jobs:
           path: ${{ runner.temp }}/${{ matrix.archive-name }}
           if-no-files-found: error
           retention-days: 14
+  upload-mac-app-store:
+    name: Upload Mac App Store build
+    needs: create-distributive
+    runs-on: macos-15
+    # optional: only on version tags
+    # if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download macOS pkg
+        uses: actions/download-artifact@v4
+        with:
+          name: TorrentPlayer-macOS-x64
+          path: dist
+      - name: Upload to App Store Connect
+        uses: apple-actions/upload-testflight-build@v5
+        with:
+          app-path: dist/TorrentPlayer-macOS-x64.pkg
+          app-type: macos
+          issuer-id: ${{ secrets.ASC_ISSUER_ID }}
+          api-key-id: ${{ secrets.ASC_KEY_ID }}
+          api-private-key: ${{ secrets.ASC_PRIVATE_KEY }}
+          backend: altool
+          wait-for-processing: false
