@@ -3,7 +3,6 @@ name: Distributives
 on:
   workflow_dispatch:
   push:
-    branches: [win_distributive]
     tags:
       - 'v*'
 
@@ -12,7 +11,6 @@ permissions:
 
 env:
   QT_VERSION: "6.10.2"
-  PRODUCT_VERSION: "0.1.1"
   BUILD_TYPE: Release
   BUILD_DIR: build-distributive
   PACKAGE_DIR: package/TorrentPlayer
@@ -151,6 +149,7 @@ jobs:
         run: |
           MACOS_SDK="$(xcrun --sdk macosx --show-sdk-path)"
           cmake -G Ninja -S . -B "${{ env.BUILD_DIR }}" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
             -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
             -DCMAKE_OSX_SYSROOT="$MACOS_SDK" \
             -DCMAKE_PREFIX_PATH="${QT_ROOT_DIR};${{ github.workspace }}/${{ env.BUILD_DIR }}" \
@@ -237,7 +236,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cmake --build "${{ env.BUILD_DIR }}" --target appstore-pkg --parallel
-          cp "${{ env.BUILD_DIR }}/TorrentPlayer-${{ env.PRODUCT_VERSION }}.pkg" \
+          cp "${{ env.BUILD_DIR }}/TorrentPlayer.pkg" \
             "${RUNNER_TEMP}/${{ matrix.archive-name }}"
 
       - name: Build Windows MSI

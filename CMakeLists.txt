@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(TorrentPlayer VERSION 0.1.1 LANGUAGES CXX)
+project(TorrentPlayer VERSION 0.1.2 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -64,7 +64,7 @@ if(APPLE AND FOR_APP_STORE)
     set(APP_BUNDLE
         "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}.app")
     set(PKG_OUTPUT
-        "${CMAKE_BINARY_DIR}/${PROJECT_NAME}-${PROJECT_VERSION}.pkg")
+        "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pkg")
 
     add_custom_target(appstore-pkg
         # remove the old bundle
