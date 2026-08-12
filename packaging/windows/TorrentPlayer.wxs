@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package
+      Name="TorrentPlayer"
+      Manufacturer="TorrentPlayer"
+      Version="$(var.ProductVersion)"
+      UpgradeCode="65c67fd7-07e3-416c-a3b6-38444e9a6828"
+      Scope="perMachine"
+      Language="1033">
+
+    <Property Id="INSTALLFOLDER" Secure="yes" />
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf"
+                 Value="packaging\windows\License.rtf" />
+
+    <MajorUpgrade
+        DowngradeErrorMessage="A newer version of TorrentPlayer is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="TorrentPlayerIcon"
+          SourceFile="resources\windows\TorrentPlayer.ico" />
+    <Property Id="ARPPRODUCTICON" Value="TorrentPlayerIcon" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="TorrentPlayer">
+        <Directory Id="INSTALLBINDIR" Name="bin" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="TorrentPlayer" />
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="TorrentPlayer" Level="1">
+      <Files Directory="INSTALLFOLDER" Include="!(bindpath.Payload)\**">
+        <Exclude Files="!(bindpath.Payload)\bin\TorrentPlayer.exe" />
+      </Files>
+
+      <Component Id="TorrentPlayerExecutable" Directory="INSTALLBINDIR" Guid="dfca66af-b29c-48ce-8bc7-6a074182fea8">
+        <File Id="TorrentPlayerExe"
+              Source="!(bindpath.Payload)\bin\TorrentPlayer.exe"
+              KeyPath="yes">
+          <Shortcut Id="StartMenuShortcut"
+                    Name="TorrentPlayer"
+                    Directory="ApplicationProgramsFolder"
+                    WorkingDirectory="INSTALLBINDIR"
+                    Icon="TorrentPlayerIcon"
+                    Advertise="yes" />
+        </File>
+        <RemoveFolder Id="RemoveApplicationProgramsFolder"
+                      Directory="ApplicationProgramsFolder"
+                      On="uninstall" />
+      </Component>
+    </Feature>
+  </Package>
+</Wix>

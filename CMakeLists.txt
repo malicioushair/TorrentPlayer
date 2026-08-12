@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(TorrentPlayer VERSION 0.1.1 LANGUAGES CXX)
+project(TorrentPlayer VERSION 0.1.2 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -39,13 +39,12 @@ else()
     )
 endif()
 
-if (NOT FOR_APP_STORE)
-    install(TARGETS ${PROJECT_NAME}
-        BUNDLE DESTINATION  .
-        RUNTIME DESTINATION .
-    )
-    install(SCRIPT ${deploy_script})
-endif()
+install(TARGETS ${PROJECT_NAME}
+    BUNDLE DESTINATION  .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION .)
+install(SCRIPT ${deploy_script})
 
 
 if (ON_BUILD_SERVER)
@@ -65,7 +64,7 @@ if(APPLE AND FOR_APP_STORE)
     set(APP_BUNDLE
         "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}.app")
     set(PKG_OUTPUT
-        "${CMAKE_BINARY_DIR}/${PROJECT_NAME}-${PROJECT_VERSION}.pkg")
+        "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pkg")
 
     add_custom_target(appstore-pkg
         # remove the old bundle
@@ -97,5 +96,24 @@ if(APPLE AND FOR_APP_STORE)
         USES_TERMINAL
         VERBATIM
         COMMENT "Creating Mac App Store package"
+    )
+endif()
+
+if(WIN32)
+    add_custom_target(wix-installer
+        COMMAND powershell
+            -NoProfile
+            -ExecutionPolicy Bypass
+            -File "${CMAKE_SOURCE_DIR}/scripts/build-wix-installer.ps1"
+            -ProductVersion "${PROJECT_VERSION}"
+            -BuildDir "${CMAKE_BINARY_DIR}"
+            -BuildType "$<CONFIG>"
+            -MsiOutput "${CMAKE_BINARY_DIR}/package/TorrentPlayer-Windows-x64.msi"
+            -PackageDir "${CMAKE_BINARY_DIR}/package/TorrentPlayer"
+            -SkipBuild
+        DEPENDS TorrentPlayer
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        USES_TERMINAL
+        VERBATIM
     )
 endif()

@@ -51,6 +51,10 @@ if (APPLE)
         MACOSX_PACKAGE_LOCATION "Resources"
     )
     target_sources(${PROJECT_NAME} PRIVATE ${APP_ICON})
+elseif(WIN32)
+    target_sources(${PROJECT_NAME} PRIVATE
+        ${CMAKE_SOURCE_DIR}/resources/windows/TorrentPlayer.rc
+    )
 endif()
 
 AddTarget(

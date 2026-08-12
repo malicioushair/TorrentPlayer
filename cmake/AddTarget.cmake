@@ -143,6 +143,12 @@ macro(AddTarget)
             ${ARG_TARGET_NAME}
             ${_add_target_sources}
         )
+        if(WIN32)
+            set_target_properties(${ARG_TARGET_NAME}
+                PROPERTIES
+                    WIN32_EXECUTABLE ON
+            )
+        endif()
 
         # Used only by the non-NDEBUG branch in GuiController.
         target_compile_definitions(

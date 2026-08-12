@@ -1,0 +1,282 @@
+name: Distributives
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+env:
+  QT_VERSION: "6.10.2"
+  BUILD_TYPE: Release
+  BUILD_DIR: build-distributive
+  PACKAGE_DIR: package/TorrentPlayer
+
+jobs:
+  publish-release:
+    needs: create-distributive
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all distributives
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: dist
+      - name: Create release and upload files
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }} # e.g. v0.1.1 when triggered by tag
+          name: TorrentPlayer ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            dist/TorrentPlayer-macOS-x64.pkg
+            dist/TorrentPlayer-Windows-x64.msi
+            dist/TorrentPlayer-Linux-x64.tar.gz
+  create-distributive:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS distributive
+            runner: macos-15
+            qt-host: mac
+            qt-arch: clang_64
+            artifact-name: TorrentPlayer-macOS-x64
+            archive-name: TorrentPlayer-macOS-x64.pkg
+          - name: Windows MSI
+            runner: windows-2022
+            qt-host: windows
+            qt-arch: win64_msvc2022_64
+            artifact-name: TorrentPlayer-Windows-x64-MSI
+            archive-name: TorrentPlayer-Windows-x64.msi
+          - name: Linux distributive
+            runner: ubuntu-24.04
+            qt-host: linux
+            qt-arch: linux_gcc_64
+            artifact-name: TorrentPlayer-Linux-x64
+            archive-name: TorrentPlayer-Linux-x64.tar.gz
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Select Xcode 26.3
+        if: runner.os == 'macOS'
+        run: sudo xcode-select --switch /Applications/Xcode_26.3.app/Contents/Developer
+
+      - name: Install macOS build tools
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja
+
+      - name: Install Linux build tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libgl1-mesa-dev \
+            libxkbcommon-x11-0 \
+            ninja-build \
+            pkg-config
+
+      - name: Set up MSVC
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install WiX
+        if: runner.os == 'Windows'
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+          wix extension add --global WixToolset.UI.wixext/5.0.2
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+
+      - name: Import certificates
+        if: runner.os == 'macOS'
+        uses: apple-actions/import-codesign-certs@v7
+        with:
+          p12-file-base64: ${{ secrets.MAC_CERTS_P12_BASE64 }}
+          p12-password: ${{ secrets.CERTS_P12_PASS }}
+
+      - name: Install Conan
+        run: pip install conan
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: ${{ matrix.qt-host }}
+          target: desktop
+          arch: ${{ matrix.qt-arch }}
+          cache: true
+          modules: qtmultimedia
+
+      - name: Configure Conan profile
+        run: conan profile detect --force
+
+      - name: Install Conan dependencies
+        run: >
+          conan install .
+          -pr:b=default
+          -of "${{ env.BUILD_DIR }}"
+          -s build_type=${{ env.BUILD_TYPE }}
+          --build=missing
+
+      - name: Install provisioning profile
+        if: runner.os == 'macOS'
+        run: |
+          profile_path="${RUNNER_TEMP}/TorrentPlayer.provisionprofile"
+          echo -n "${{ secrets.MAC_PROVISIONING_PROFILE_BASE64 }}" | base64 --decode > "${profile_path}"
+
+      - name: Configure CMake on macOS
+        if: runner.os == 'macOS'
+        run: |
+          MACOS_SDK="$(xcrun --sdk macosx --show-sdk-path)"
+          cmake -G Ninja -S . -B "${{ env.BUILD_DIR }}" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
+            -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
+            -DCMAKE_OSX_SYSROOT="$MACOS_SDK" \
+            -DCMAKE_PREFIX_PATH="${QT_ROOT_DIR};${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DFOR_APP_STORE=true \
+            -DMAC_APP_IDENTITY="${{ secrets.MAC_APP_IDENTITY }}" \
+            -DMAC_INSTALLER_IDENTITY="${{ secrets.MAC_INSTALLER_IDENTITY }}" \
+            -DMAC_PROVISIONING_PROFILE="${{ runner.temp }}/TorrentPlayer.provisionprofile" \
+            -DAPPSTORE_TEAM_ID="${{ secrets.APPSTORE_TEAM_ID }}" \
+            -DQT_HOST_PATH="${QT_ROOT_DIR}" \
+            -DGLog_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DLibtorrentRasterbar_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}"
+
+      - name: Configure CMake on Linux
+        if: runner.os == 'Linux'
+        run: |
+          cmake -G Ninja -S . -B "${{ env.BUILD_DIR }}" \
+            -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
+            -DCMAKE_PREFIX_PATH="${QT_ROOT_DIR};${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DQT_HOST_PATH="${QT_ROOT_DIR}" \
+            -DGLog_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}" \
+            -DLibtorrentRasterbar_DIR="${{ github.workspace }}/${{ env.BUILD_DIR }}"
+
+      - name: Configure CMake on Windows
+        if: runner.os == 'Windows'
+        run: >
+          cmake -G Ninja -S . -B "${{ env.BUILD_DIR }}"
+          -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}"
+          -DCMAKE_PREFIX_PATH="${env:QT_ROOT_DIR};${{ github.workspace }}\${{ env.BUILD_DIR }}"
+          -DQT_HOST_PATH="${env:QT_ROOT_DIR}"
+          -DGLog_DIR="${{ github.workspace }}\${{ env.BUILD_DIR }}"
+          -DLibtorrentRasterbar_DIR="${{ github.workspace }}\${{ env.BUILD_DIR }}"
+
+      - name: Build
+        run: cmake --build "${{ env.BUILD_DIR }}" --target TorrentPlayer --parallel
+
+      - name: Install deployable application
+        run: >
+          cmake --install "${{ env.BUILD_DIR }}"
+          --prefix "${{ github.workspace }}/${{ env.PACKAGE_DIR }}"
+
+      - name: Deploy Conan runtime libraries on macOS
+        if: runner.os == 'macOS'
+        run: |
+          source "${{ env.BUILD_DIR }}/conanrun.sh"
+          frameworks_dir="${{ env.PACKAGE_DIR }}/TorrentPlayer.app/Contents/Frameworks"
+          copied_conan_runtime=false
+          shopt -s nullglob
+          IFS=: read -ra conan_lib_dirs <<< "${DYLD_LIBRARY_PATH:-}"
+
+          for conan_lib_dir in "${conan_lib_dirs[@]}"; do
+            for conan_library in "${conan_lib_dir}"/*.dylib; do
+              cp -a "${conan_library}" "${frameworks_dir}/"
+              copied_conan_runtime=true
+            done
+          done
+
+          if [[ "${copied_conan_runtime}" != true ]]; then
+            echo "No Conan shared runtime libraries found; assuming static linking."
+          fi
+
+      - name: Deploy Conan runtime libraries on Windows
+        if: runner.os == 'Windows'
+        run: |
+          $conanRun = "${{ github.workspace }}\${{ env.BUILD_DIR }}\conanrun.bat"
+          $conanPathOutput = & cmd.exe /d /v:on /c "call `"$conanRun`" >nul && echo !PATH!"
+          $conanPath = $conanPathOutput | Select-Object -Last 1
+          $copiedConanRuntime = 0
+
+          foreach ($conanRuntimeDir in ($conanPath -split ';')) {
+            if ($conanRuntimeDir -like "$env:USERPROFILE\.conan2\*") {
+              Get-ChildItem -LiteralPath $conanRuntimeDir -Filter *.dll -File -ErrorAction SilentlyContinue |
+                ForEach-Object {
+                  Copy-Item -LiteralPath $_.FullName -Destination "${{ env.PACKAGE_DIR }}" -Force
+                  $copiedConanRuntime++
+                }
+            }
+          }
+
+          if ($copiedConanRuntime -eq 0) {
+            Write-Host "No Conan shared runtime libraries found; assuming static linking."
+          }
+
+      - name: Build App Store pkg
+        if: runner.os == 'macOS'
+        run: |
+          cmake --build "${{ env.BUILD_DIR }}" --target appstore-pkg --parallel
+          cp "${{ env.BUILD_DIR }}/TorrentPlayer.pkg" \
+            "${RUNNER_TEMP}/${{ matrix.archive-name }}"
+
+      - name: Build Windows MSI
+        if: runner.os == 'Windows'
+        run: |
+          cmake --build "${{ env.BUILD_DIR }}" --target wix-installer --parallel
+          cp ${{ env.BUILD_DIR }}/package/${{ matrix.archive-name }} -Destination ${{ runner.temp }}/${{ matrix.archive-name }}
+
+      - name: Archive Linux distributive
+        if: runner.os == 'Linux'
+        run: >
+          tar -czf "${RUNNER_TEMP}/${{ matrix.archive-name }}"
+          -C package TorrentPlayer
+
+      - name: Upload distributive
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ runner.temp }}/${{ matrix.archive-name }}
+          if-no-files-found: error
+          retention-days: 14
+  upload-mac-app-store:
+    name: Upload Mac App Store build
+    needs: create-distributive
+    runs-on: macos-15
+    # optional: only on version tags
+    # if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download macOS pkg
+        uses: actions/download-artifact@v4
+        with:
+          name: TorrentPlayer-macOS-x64
+          path: dist
+      - name: Upload to App Store Connect
+        uses: apple-actions/upload-testflight-build@v5
+        with:
+          app-path: dist/TorrentPlayer-macOS-x64.pkg
+          app-type: macos
+          issuer-id: ${{ secrets.ASC_ISSUER_ID }}
+          api-key-id: ${{ secrets.ASC_KEY_ID }}
+          api-private-key: ${{ secrets.ASC_PRIVATE_KEY }}
+          backend: altool
+          wait-for-processing: false
