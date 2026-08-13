@@ -7,6 +7,7 @@ import QtQuick.Layouts
 
 import TorrentPlayer
 
+import "../CustomControls"
 import "../colors.js" as Colors
 
 Item {
@@ -258,7 +259,7 @@ Item {
         }
     }
 
-    Text {
+    OutlinedText {
         id: subtitleTextID
 
         z: 2
@@ -272,9 +273,7 @@ Item {
 
         text: SubtitlesController.currentSubtitleText
         color: Colors.Player.subtitleText
-        style: Text.Outline
-        styleColor: Colors.Player.subtitleOutline
-        font.pixelSize: 24
+        font.pixelSize: SubtitlesController.fontSize
         font.weight: Font.Medium
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.Wrap

@@ -17,6 +17,7 @@ constexpr auto RECENT_IMDB_ID = "recentImdbId";
 constexpr auto SUBTITLE_OFFSET_STEP_MS = 500;
 constexpr auto AUTO_FIND = "AUTO_FIND";
 constexpr auto PREFERRED_LANG = "PREFERRED_LANG";
+constexpr auto SUBTITLE_FONT_SIZE = "SUBTITLE_FONT_SIZE";
 }
 
 struct SubtitlesController::Impl
@@ -129,6 +130,17 @@ QString SubtitlesController::GetPreferredLanguage() const
 void SubtitlesController::SetPreferredLanguage(const QString & lang)
 {
 	m_impl->settings.setValue(PREFERRED_LANG, lang);
+}
+
+int SubtitlesController::GetFontSize() const
+{
+	return m_impl->settings.value(SUBTITLE_FONT_SIZE, 40).toInt();
+}
+
+void SubtitlesController::SetFontSize(int fontSize)
+{
+	m_impl->settings.setValue(SUBTITLE_FONT_SIZE, fontSize);
+	emit fontSizeChanged();
 }
 
 int SubtitlesController::GetActiveSubtitleTrack() const

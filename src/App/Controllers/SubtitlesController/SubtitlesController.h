@@ -27,6 +27,7 @@ class SubtitlesController
 	Q_PROPERTY(bool openSubtitlesConfigured READ GetOpenSubtitlesConfigured NOTIFY userDataChanged)
 	Q_PROPERTY(bool autoFind READ GetAutoFind WRITE SetAutoFind NOTIFY autoFindChanged)
 	Q_PROPERTY(QString preferredLanguage READ GetPreferredLanguage WRITE SetPreferredLanguage NOTIFY prefferedLanguageChanged)
+	Q_PROPERTY(int fontSize READ GetFontSize WRITE SetFontSize NOTIFY fontSizeChanged)
 
 public:
 	SubtitlesController(QObject * parent = nullptr);
@@ -50,6 +51,7 @@ signals:
 	void showErrorMessage(const QString & text, const QString & description);
 	void autoFindChanged();
 	void prefferedLanguageChanged();
+	void fontSizeChanged();
 
 private:
 	int GetActiveSubtitleTrack() const;
@@ -67,6 +69,8 @@ private:
 	void SetAutoFind(bool value);
 	QString GetPreferredLanguage() const;
 	void SetPreferredLanguage(const QString & lang);
+	int GetFontSize() const;
+	void SetFontSize(int fontSize);
 
 private:
 	struct Impl;

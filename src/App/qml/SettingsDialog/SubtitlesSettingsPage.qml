@@ -25,6 +25,7 @@ StyledScrollView {
 
         SubtitlesController.imdbId = imdbIDInputID.text.trim()
         SubtitlesController.userData = updatedUserData
+        subtitleParamsSectionID.applySubtitleParams()
     }
 
     onImdbIdEdited: function(imdbId) {
@@ -138,6 +139,44 @@ StyledScrollView {
                 model: ["EN", "RU"]
                 currentValue: SubtitlesController.preferredLanguage
                 onActivated: SubtitlesController.preferredLanguage = currentValue
+            }
+        }
+
+        RowLayout {
+            Item {
+                Layout.fillWidth: true
+            }
+
+            Rectangle {
+                id: downloadSuccessBubbleID
+
+                Layout.preferredWidth: downloadSuccessTextID.implicitWidth + 24
+                Layout.preferredHeight: 38
+
+                radius: height / 2
+                color: Colors.SettingsDialog.inputBackground
+                border.width: 1
+                border.color: Colors.SettingsDialog.configured
+                visible: false
+
+                Label {
+                    id: downloadSuccessTextID
+
+                    anchors.centerIn: parent
+
+                    text: qsTr("Subtitles downloaded")
+                    color: Colors.SettingsDialog.configured
+                    font.weight: Font.Medium
+                }
+            }
+
+            Button {
+                Layout.preferredWidth: 165
+                Layout.preferredHeight: 40
+
+                text: qsTr("Manual download")
+                highlighted: true
+                onClicked: rootID.downloadRequested()
             }
         }
     }
@@ -363,47 +402,38 @@ StyledScrollView {
     }
 
     SettingsSection {
-        title: qsTr("Manual download")
+        id: subtitleParamsSectionID
+
+        function applySubtitleParams() {
+            SubtitlesController.fontSize = fontSizeParamID.text
+        }
+
+        title: qsTr("Parameters")
         separatorVisible: false
 
         RowLayout {
             Layout.fillWidth: true
             spacing: 12
 
+            Label {
+                text: qsTr("Font size")
+            }
+
             Item {
                 Layout.fillWidth: true
             }
 
-            Rectangle {
-                id: downloadSuccessBubbleID
+            TextField {
+                id: fontSizeParamID
 
-                Layout.preferredWidth: downloadSuccessTextID.implicitWidth + 24
-                Layout.preferredHeight: 38
+                Layout.alignment: Qt.AlignRight
+                Layout.preferredWidth: 50
+                Layout.preferredHeight: 30
 
-                radius: height / 2
-                color: Colors.SettingsDialog.inputBackground
-                border.width: 1
-                border.color: Colors.SettingsDialog.configured
-                visible: false
+                padding: 0
+                text: SubtitlesController.fontSize
 
-                Label {
-                    id: downloadSuccessTextID
-
-                    anchors.centerIn: parent
-
-                    text: qsTr("Subtitles downloaded.")
-                    color: Colors.SettingsDialog.configured
-                    font.weight: Font.Medium
-                }
-            }
-
-            Button {
-                Layout.preferredWidth: 113
-                Layout.preferredHeight: 40
-
-                text: qsTr("Download")
-                highlighted: true
-                onClicked: rootID.downloadRequested()
+                onAccepted: SubtitlesController.fontSize = text
             }
         }
     }
