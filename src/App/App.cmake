@@ -29,6 +29,9 @@ AddTarget(
         keychain::keychain
         TorrentPlayerSubtitles
 
+    COMPILE_DEFINITIONS
+        $<IF:$<PLATFORM_ID:Darwin>,DISABLE_QT_HW_TEXTURE_CONVERSION,> # Workaround for a memory leak due to how Qt handles Metal textures on MacOS
+
     ADDITIONAL_QML_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/App/Controllers/SubtitlesController/SubtitlesController.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/App/Controllers/SubtitlesController/SubtitlesController.cpp
