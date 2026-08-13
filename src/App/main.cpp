@@ -32,6 +32,9 @@ void InitLogging(const char * execName)
 
 int main(int argc, char * argv[])
 {
+#ifdef DISABLE_QT_HW_TEXTURE_CONVERSION
+	qputenv("QT_DISABLE_HW_TEXTURES_CONVERSION", "1");
+#endif
 	try
 	{
 		QCoreApplication::setOrganizationName("dv");
