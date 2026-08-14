@@ -27,6 +27,7 @@ struct SubtitlesController::Impl
 		, userData(TorrentPlayer::CredentialStore::ReadUserData())
 		, imdbId(settings.value(RECENT_IMDB_ID).toString())
 		, subtitleLoader(&controller)
+		, subtitleLanguages(&controller)
 	{
 		QObject::connect(&subtitleLoader, &SubtitleLoader::showErrorMessage, &controller, &SubtitlesController::showErrorMessage);
 		QObject::connect(&subtitleLoader, &SubtitleLoader::activeSubtitleTrackChanged, &controller, &SubtitlesController::activeSubtitleTrackChanged);
@@ -43,6 +44,7 @@ struct SubtitlesController::Impl
 	qint64 playbackPositionMs {};
 	int subtitleOffsetMs {};
 	SubtitleLoader subtitleLoader;
+	SubtitleLanguageModel subtitleLanguages;
 
 	void UpdatePlaybackPosition()
 	{
@@ -74,7 +76,7 @@ void SubtitlesController::SetVideoFile(const std::string & videoFile)
 void SubtitlesController::DownloadSubtitles(const QString & language)
 {
 	if (language.isEmpty())
-		m_impl->subtitleLoader.DownloadSubtitles(m_impl->settings.value(PREFERRED_LANG).toString());
+		m_impl->subtitleLoader.DownloadSubtitles(GetPreferredLanguage());
 	else
 		m_impl->subtitleLoader.DownloadSubtitles(language);
 }
@@ -97,6 +99,11 @@ void SubtitlesController::DecreaseOffset()
 	m_impl->subtitleOffsetMs -= SUBTITLE_OFFSET_STEP_MS;
 	m_impl->UpdatePlaybackPosition();
 	emit subtitleOffsetChanged();
+}
+
+int SubtitlesController::IndexOfSubtitleLanguage(const QString & code) const
+{
+	return m_impl->subtitleLanguages.IndexOfCode(code);
 }
 
 bool SubtitlesController::GetSubdlConfigured() const
@@ -124,12 +131,21 @@ void SubtitlesController::SetAutoFind(bool value)
 
 QString SubtitlesController::GetPreferredLanguage() const
 {
-	return m_impl->settings.value(PREFERRED_LANG).toString();
+	return m_impl->settings.value(PREFERRED_LANG, "EN").toString();
 }
 
 void SubtitlesController::SetPreferredLanguage(const QString & lang)
 {
+	if (GetPreferredLanguage() == lang)
+		return;
+
 	m_impl->settings.setValue(PREFERRED_LANG, lang);
+	emit prefferedLanguageChanged();
+}
+
+SubtitleLanguageModel * SubtitlesController::GetSubtitleLanguages()
+{
+	return &m_impl->subtitleLanguages;
 }
 
 int SubtitlesController::GetFontSize() const
