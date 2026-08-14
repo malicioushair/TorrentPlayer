@@ -10,6 +10,8 @@
 #include <QStringList>
 #include <QVariantMap>
 
+#include "App/Models/SubtitleLanguageModel.h"
+
 class SubtitlesController
 	: public QObject
 {
@@ -27,6 +29,7 @@ class SubtitlesController
 	Q_PROPERTY(bool openSubtitlesConfigured READ GetOpenSubtitlesConfigured NOTIFY userDataChanged)
 	Q_PROPERTY(bool autoFind READ GetAutoFind WRITE SetAutoFind NOTIFY autoFindChanged)
 	Q_PROPERTY(QString preferredLanguage READ GetPreferredLanguage WRITE SetPreferredLanguage NOTIFY prefferedLanguageChanged)
+	Q_PROPERTY(SubtitleLanguageModel * subtitleLanguages READ GetSubtitleLanguages CONSTANT)
 	Q_PROPERTY(int fontSize READ GetFontSize WRITE SetFontSize NOTIFY fontSizeChanged)
 
 public:
@@ -37,6 +40,7 @@ public:
 	Q_INVOKABLE void SetPlaybackPosition(qint64 positionMs);
 	Q_INVOKABLE void IncreaseOffset();
 	Q_INVOKABLE void DecreaseOffset();
+	Q_INVOKABLE int IndexOfSubtitleLanguage(const QString & code) const;
 
 	void SetVideoFile(const std::string & videoFile);
 
@@ -69,6 +73,7 @@ private:
 	void SetAutoFind(bool value);
 	QString GetPreferredLanguage() const;
 	void SetPreferredLanguage(const QString & lang);
+	SubtitleLanguageModel * GetSubtitleLanguages();
 	int GetFontSize() const;
 	void SetFontSize(int fontSize);
 

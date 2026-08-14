@@ -136,8 +136,12 @@ StyledScrollView {
             ComboBox {
                 id: preferedLanguageInputID
                 Layout.preferredHeight: 30
-                model: ["EN", "RU"]
-                currentValue: SubtitlesController.preferredLanguage
+                Layout.preferredWidth: 180
+
+                textRole: "NameRole"
+                valueRole: "CodeRole"
+                model: SubtitlesController.subtitleLanguages
+                currentIndex: SubtitlesController.IndexOfSubtitleLanguage(SubtitlesController.preferredLanguage)
                 onActivated: SubtitlesController.preferredLanguage = currentValue
             }
         }
