@@ -9,6 +9,27 @@ StyledScrollView {
 
     property string savePath: ""
     property bool frostedGlassEnabled: true
+    property string uiLanguage: ""
+
+    readonly property var uiLanguages: [
+        { code: "", name: qsTr("System default") },
+        { code: "en", name: "English" },
+        { code: "de", name: "Deutsch" },
+        { code: "es", name: "Español" },
+        { code: "fr", name: "Français" },
+        { code: "it", name: "Italiano" },
+        { code: "ja", name: "日本語" },
+        { code: "ko", name: "한국어" },
+        { code: "nl", name: "Nederlands" },
+        { code: "pl", name: "Polski" },
+        { code: "pt_BR", name: "Português (Brasil)" },
+        { code: "ru", name: "Русский" },
+        { code: "sr", name: "Српски" },
+        { code: "sr_Latn", name: "Srpski" },
+        { code: "tr", name: "Türkçe" },
+        { code: "uk", name: "Українська" },
+        { code: "zh_CN", name: "简体中文" },
+    ]
 
     signal chooseFolderRequested
 
@@ -20,6 +41,41 @@ StyledScrollView {
     SettingsSection {
         Layout.topMargin: 8
 
+        title: qsTr("Language")
+
+        RowLayout {
+            Layout.fillWidth: true
+
+            Label {
+                text: qsTr("Interface language")
+                color: Colors.SettingsDialog.secondaryText
+                wrapMode: Text.WordWrap
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            ComboBox {
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 220
+
+                textRole: "name"
+                valueRole: "code"
+                model: rootID.uiLanguages
+                currentIndex: {
+                    for (let i = 0; i < rootID.uiLanguages.length; ++i) {
+                        if (rootID.uiLanguages[i].code === rootID.uiLanguage)
+                            return i
+                    }
+                    return 0
+                }
+                onActivated: rootID.uiLanguage = currentValue
+            }
+        }
+    }
+
+    SettingsSection {
         title: qsTr("Download location")
 
         Label {
