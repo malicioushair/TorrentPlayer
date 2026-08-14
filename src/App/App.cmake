@@ -15,6 +15,7 @@ AddTarget(
             QuickControls2
             Multimedia
             Network
+            LinguistTools
     PACKAGE glog
     PACKAGE keychain
 
@@ -35,6 +36,13 @@ AddTarget(
     ADDITIONAL_QML_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/App/Controllers/SubtitlesController/SubtitlesController.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/App/Controllers/SubtitlesController/SubtitlesController.cpp
+)
+
+file(GLOB TP_TS_FILES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/translations/*.ts)
+qt_add_translations(${PROJECT_NAME}
+    SOURCE_TARGETS ${PROJECT_NAME} TorrentPlayerSubtitles
+    TS_FILES ${TP_TS_FILES}
+    LUPDATE_OPTIONS -no-obsolete
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE

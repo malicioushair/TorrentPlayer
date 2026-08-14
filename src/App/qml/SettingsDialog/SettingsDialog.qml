@@ -52,6 +52,7 @@ Dialog {
     onAccepted: {
         guiController.savePath = generalSettingsID.savePath
         guiController.frostedGlassEnabled = generalSettingsID.frostedGlassEnabled
+        guiController.uiLanguage = generalSettingsID.uiLanguage
         guiController.activeAudioTrack = playbackSettingsID.activeAudioTrack
         subtitlesSettingsID.applySubtitleSettings()
     }
@@ -188,6 +189,7 @@ Dialog {
 
                 savePath: rootID.pendingSavePath
                 frostedGlassEnabled: guiController.frostedGlassEnabled
+                uiLanguage: guiController.uiLanguage
                 onChooseFolderRequested: folderDialogID.open()
             }
 

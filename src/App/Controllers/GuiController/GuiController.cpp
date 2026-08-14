@@ -6,6 +6,8 @@
 
 #include <QDateTime>
 #include <QFileInfo>
+#include <QGuiApplication>
+#include <QLocale>
 #include <QMediaMetaData>
 #include <QMediaPlayer>
 #include <QMimeDatabase>
@@ -14,6 +16,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QStringLiteral>
+#include <QTranslator>
 #include <QUrlQuery>
 
 #include "glog/logging.h"
@@ -27,6 +30,30 @@ using namespace TorrentPlayer;
 namespace {
 constexpr auto PATH = "PATH";
 constexpr auto FROSTED_GLASS_ENABLED = "FROSTED_GLASS_ENABLED";
+constexpr auto UI_LANGUAGE = "UI_LANGUAGE";
+
+bool LoadTranslator(QTranslator & translator, const QString & language)
+{
+	QGuiApplication::removeTranslator(&translator);
+
+	if (language == QStringLiteral("en"))
+		return false;
+
+	if (!language.isEmpty())
+		return translator.load(QStringLiteral(":/i18n/TorrentPlayer_%1").arg(language));
+
+	for (const auto & uiLanguage : QLocale::system().uiLanguages())
+	{
+		const QLocale locale(uiLanguage);
+		if (translator.load(
+				locale,
+				QStringLiteral("TorrentPlayer"),
+				QStringLiteral("_"),
+				QStringLiteral(":/i18n")))
+			return true;
+	}
+	return false;
+}
 
 class HotReloadUrlInterceptor
 	: public QQmlAbstractUrlInterceptor
@@ -115,12 +142,19 @@ struct GuiController::Impl
 	TorrentDownloader downloader;
 	QMediaPlayer mediaInfoReader;
 	QSettings settings;
+	QTranslator translator;
 	std::string videoFile {};
 	QStringList audioTracks;
 	int activeAudioTrack { -1 };
 	std::unique_ptr<HotReloadUrlInterceptor> interceptor { std::make_unique<HotReloadUrlInterceptor>() };
 	const GuiController & guiController;
 	SubtitlesController * subtitlesController {};
+
+	void ApplyUiLanguage(const QString & language)
+	{
+		if (LoadTranslator(translator, language))
+			QGuiApplication::installTranslator(&translator);
+	}
 
 	void LoadQml()
 	{
@@ -139,6 +173,7 @@ GuiController::GuiController(Notifier & notifier, QObject * parent)
 	, ITorrentDownloaderObserver(notifier)
 	, m_impl(std::make_unique<Impl>(notifier, *this))
 {
+	m_impl->ApplyUiLanguage(GetUiLanguage());
 	m_impl->engine.rootContext()->setContextProperty("guiController", this);
 	m_impl->engine.addImportPath("qrc:/qt/qml");
 	m_impl->engine.addUrlInterceptor(m_impl->interceptor.get());
@@ -274,6 +309,22 @@ void GuiController::SetFrostedGlassEnabled(bool enabled)
 
 	m_impl->settings.setValue(FROSTED_GLASS_ENABLED, enabled);
 	emit frostedGlassEnabledChanged();
+}
+
+QString GuiController::GetUiLanguage() const
+{
+	return m_impl->settings.value(UI_LANGUAGE).toString();
+}
+
+void GuiController::SetUiLanguage(const QString & language)
+{
+	if (GetUiLanguage() == language)
+		return;
+
+	m_impl->settings.setValue(UI_LANGUAGE, language);
+	m_impl->ApplyUiLanguage(language);
+	emit uiLanguageChanged();
+	m_impl->engine.retranslate();
 }
 
 QStringList GuiController::GetAudioTracks() const
