@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090a0f">
+  <meta name="description" content="Privacy Policy for TorrentPlayer.">
+  <title>Privacy Policy — TorrentPlayer</title>
+  <style>
+    :root {
+      --background: #090a0f;
+      --surface: rgba(21, 22, 30, 0.82);
+      --line: rgba(255, 255, 255, 0.1);
+      --foreground: #f6f5fa;
+      --muted: #aaa8b4;
+      --muted-light: #cbc8d2;
+      --accent: #9c6bff;
+      --accent-bright: #b991ff;
+      --accent-soft: rgba(156, 107, 255, 0.14);
+      --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--foreground);
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(156, 107, 255, 0.18), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 90% 10%, rgba(90, 120, 255, 0.1), transparent 50%),
+        var(--background);
+      font-family: var(--font-sans);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent-bright); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ::selection { background: rgba(156, 107, 255, 0.42); color: #fff; }
+
+    .wrap {
+      width: min(760px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 28px 0 72px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--foreground);
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      text-decoration: none;
+    }
+    .brand:hover { text-decoration: none; opacity: 0.92; }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-bright), var(--accent));
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    .back-link {
+      color: var(--muted-light);
+      font-size: 14px;
+    }
+
+    .kicker {
+      display: inline-block;
+      margin-bottom: 12px;
+      color: var(--accent-bright);
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(32px, 5vw, 44px);
+      line-height: 1.1;
+      letter-spacing: -0.035em;
+    }
+
+    .meta {
+      margin: 0 0 36px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .card {
+      padding: 28px 28px 8px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    h2 {
+      margin: 28px 0 10px;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    h2:first-of-type { margin-top: 4px; }
+
+    p, li {
+      color: var(--muted-light);
+      font-size: 15.5px;
+    }
+
+    p { margin: 0 0 14px; }
+    ul {
+      margin: 0 0 16px;
+      padding-left: 1.2em;
+    }
+    li { margin-bottom: 8px; }
+    li strong { color: var(--foreground); font-weight: 600; }
+
+    .note {
+      margin: 8px 0 20px;
+      padding: 14px 16px;
+      border: 1px solid rgba(156, 107, 255, 0.28);
+      border-radius: 14px;
+      background: var(--accent-soft);
+      color: var(--muted-light);
+      font-size: 14.5px;
+    }
+
+    footer {
+      margin-top: 36px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    footer .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin: 10px 0 14px;
+    }
+
+    footer .footer-links a { color: var(--muted-light); }
+
+    @media (max-width: 600px) {
+      .wrap { width: min(100% - 28px, 760px); padding-top: 20px; }
+      .card { padding: 22px 18px 4px; border-radius: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>TorrentPlayer</span>
+      </a>
+      <a class="back-link" href="index.html">← Back to home</a>
+    </div>
+
+    <span class="kicker">Legal</span>
+    <h1>Privacy Policy</h1>
+    <p class="meta">Effective date: August 17, 2026 · Applies to the TorrentPlayer app</p>
+
+    <article class="card">
+      <p>
+        This Privacy Policy describes how TorrentPlayer (“the App,” “we,” “us,” or “our”)
+        handles information when you use the App. TorrentPlayer is developed by Dmitry Vorobyev.
+      </p>
+      <p class="note">
+        Short version: we do not run accounts on our own servers, and we do not use analytics or
+        advertising trackers. Data stays on your Mac unless you use optional subtitle services or
+        BitTorrent networking, which involve third parties by design.
+      </p>
+
+      <h2>1. Information we do not collect</h2>
+      <p>We do not operate our own backend that collects personal information from the App. In particular, we do not:</p>
+      <ul>
+        <li>Create or require a TorrentPlayer account</li>
+        <li>Collect your name, email address, or payment details through the App</li>
+        <li>Use third-party analytics, advertising, or crash-reporting SDKs in the App</li>
+        <li>Sell, rent, or share your personal information with data brokers</li>
+      </ul>
+      <p>
+        Purchases made through the Mac App Store are processed by Apple under
+        <a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noreferrer">Apple’s Privacy Policy</a>.
+      </p>
+
+      <h2>2. Information stored on your device</h2>
+      <p>The App stores preferences and working data locally on your Mac, including:</p>
+      <ul>
+        <li><strong>App settings</strong> such as download folder location, interface language, appearance options, and subtitle preferences</li>
+        <li><strong>Optional subtitle credentials</strong> you enter (for example OpenSubtitles username/password or a SubDL API key)</li>
+        <li><strong>Optional media identifiers</strong> you provide or that are derived for subtitle matching (for example an IMDb ID)</li>
+        <li><strong>Downloaded media and torrent resume data</strong> needed to continue transfers and play files</li>
+      </ul>
+      <p>
+        This information remains on your device unless you choose features that send it to a
+        third-party service described below.
+      </p>
+
+      <h2>3. Subtitle providers (optional)</h2>
+      <p>
+        If you use subtitle search or download, the App contacts third-party providers you enable
+        or that ship with default API configuration, currently including:
+      </p>
+      <ul>
+        <li><strong>OpenSubtitles</strong> (<a href="https://www.opensubtitles.com/" target="_blank" rel="noreferrer">opensubtitles.com</a>)</li>
+        <li><strong>SubDL</strong> (<a href="https://subdl.com/" target="_blank" rel="noreferrer">subdl.com</a>)</li>
+      </ul>
+      <p>Depending on the provider and your settings, a request may include:</p>
+      <ul>
+        <li>Account credentials or API keys you configured</li>
+        <li>Preferred subtitle language</li>
+        <li>Video-related metadata used for matching, such as file name, file size, content hash, IMDb ID, and season/episode numbers when available</li>
+      </ul>
+      <p>
+        Those providers process the request under their own privacy policies. We do not control
+        how they store or use the information they receive.
+      </p>
+
+      <h2>4. BitTorrent networking</h2>
+      <p>
+        When you open a torrent or magnet link, the App uses the BitTorrent protocol to exchange
+        data with peers and communicate with trackers or other discovery mechanisms. As with any
+        BitTorrent client, participants in a swarm can observe network information such as your
+        IP address and the torrents you participate in.
+      </p>
+      <p>
+        We do not operate a torrent index or content catalog. You are responsible for only
+        accessing media you own or are authorized to use.
+      </p>
+
+      <h2>5. Network diagnostics visible to your system</h2>
+      <p>
+        Like other networked apps, general connection metadata (for example IP address and
+        timestamps) may be processed by your operating system, network provider, or DNS resolver
+        when the App makes internet requests. That processing is outside our control.
+      </p>
+
+      <h2>6. Children’s privacy</h2>
+      <p>
+        The App is not directed to children under 13, and we do not knowingly collect personal
+        information from children. If you believe a child has provided personal information
+        through optional third-party features, contact us and we will help you understand how to
+        remove related local data from the device.
+      </p>
+
+      <h2>7. Data retention and your choices</h2>
+      <ul>
+        <li>You can clear or change local credentials and settings inside the App</li>
+        <li>You can disable or avoid subtitle provider features</li>
+        <li>You can stop BitTorrent activity by closing transfers or not opening torrent/magnet links</li>
+        <li>You can uninstall the App to remove the application; delete related local files and preferences if you want residual data removed</li>
+      </ul>
+
+      <h2>8. International users</h2>
+      <p>
+        Third-party services you choose to use may process data in other countries. Their terms
+        and privacy policies govern that processing.
+      </p>
+
+      <h2>9. Changes to this policy</h2>
+      <p>
+        We may update this Privacy Policy from time to time. The “Effective date” at the top will
+        change when we do. Continued use of the App after an update means you accept the revised
+        policy.
+      </p>
+
+      <h2>10. Contact</h2>
+      <p>
+        Questions about this Privacy Policy or the App’s privacy practices:
+      </p>
+      <ul>
+        <li>
+          GitHub Issues:
+          <a href="https://github.com/malicioushair/TorrentPlayer/issues" target="_blank" rel="noreferrer">github.com/malicioushair/TorrentPlayer/issues</a>
+        </li>
+        <li>Developer: Dmitry Vorobyev</li>
+      </ul>
+    </article>
+
+    <footer>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="index.html#support">Support</a>
+        <a href="privacy.html">Privacy Policy</a>
+      </div>
+      <small>© 2026 TorrentPlayer</small>
+    </footer>
+  </div>
+</body>
+</html>
